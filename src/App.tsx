@@ -1,35 +1,27 @@
 import { useState } from 'react'
 import reactLogo from './assets/react.svg'
 import viteLogo from '/vite.svg'
+import logo from './Imagenes/Buen Sabor.png';
+import carrito from './Imagenes/carrito.png';
 import './App.css'
 
-function App() {
-  const [count, setCount] = useState(0)
-
+function Header() {
   return (
-    <>
-      <div>
-        <a href="https://vitejs.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
+    <header className="navbar">
+      <div className="logo">
+        <img src={logo} alt="BuenSabor" />
       </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
+      <nav className="navbar-nav">
+        <ul>
+          {/* <li><button className="btn">Iniciar sesión</button></li>
+          <li><button className="btn">Registrarse</button></li> */}
+          <li><div className="cart-icon">{
+            <img src={carrito} alt="Carrito"/>
+          }</div></li>
+        </ul>
+      </nav>
+    </header>
+  );
 }
 
-export default App
+export default Header;
