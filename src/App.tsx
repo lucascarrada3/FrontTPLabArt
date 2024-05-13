@@ -1,22 +1,25 @@
 import { useState } from 'react'
 import reactLogo from './assets/react.svg'
 import viteLogo from '/vite.svg'
-import logo from './Imagenes/BuenSabor.png';
+import logo from './Imagenes/Buen Sabor.png';
+import carrito from './Imagenes/carrito.png';
 import './App.css'
 
 function Header() {
   return (
-    <header className="header">
+    <header className="navbar">
       <div className="logo">
         <img src={logo} alt="BuenSabor" />
       </div>
-      <div className="actions">
-        <button className="btn">Iniciar sesión</button>
-        <button className="btn">Registrarse</button>
-        <div className="cart-icon">
-          {/* Aquí agregaríamos el icono del carrito */}
-        </div>
-      </div>
+      <nav className="navbar-nav">
+        <ul>
+          {/* <li><button className="btn">Iniciar sesión</button></li>
+          <li><button className="btn">Registrarse</button></li> */}
+          <li><div className="cart-icon">{
+            <img src={carrito} alt="Carrito"/>
+          }</div></li>
+        </ul>
+      </nav>
     </header>
   );
 }
