@@ -43,26 +43,27 @@ function App() {
     }));
   };
 
-  const handleCheckboxChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, checked } = event.target;
-    const ingredientes = [...nuevaCarta.ingredientes.split(',')];
+  // const handleCheckboxChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+  //   const { name, checked } = event.target;
+  //   const ingredientes = [...nuevaCarta.ingredientes.split(',')];
 
-    if (checked) {
-      ingredientes.push(name);
-      incrementarContador(name as keyof typeof contadores);
-    } else {
-      const index = ingredientes.indexOf(name);
-      if (index !== -1) {
-        ingredientes.splice(index, 1);
-        decrementarContador(name as keyof typeof contadores);
-      }
-    }
+  //   if (checked) {
+  //     ingredientes.push(name);
+  //     incrementarContador(name as keyof typeof contadores);
+  //   } else {
+  //     const index = ingredientes.indexOf(name);
+  //     if (index !== -1) {
+  //       ingredientes.splice(index, 1);
+  //       decrementarContador(name as keyof typeof contadores);
+  //     }
+  //   }
 
-    setNuevaCarta(prevState => ({
-      ...prevState,
-      ingredientes: ingredientes.join(',')
-    }));
-  };
+  //   setNuevaCarta(prevState => ({
+  //     ...prevState,
+  //     ingredientes: ingredientes.join(',')
+  //   }));
+  // };
+  
   const incrementarContador = (name: keyof typeof contadores) => {
     setContadores(prevState => ({
       ...prevState,
