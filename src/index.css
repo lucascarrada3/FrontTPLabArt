@@ -127,11 +127,4 @@ button:focus-visible {
   margin: 5px 0;
 }
 
-.btn-agregar {
-  position: fixed;
-  top: 180px; /* Ajusta el valor según sea necesario */
-  left: 20px; /* Ajusta el valor según sea necesario */
-  z-index: 999; /* Asegura que esté por encima de otros elementos */
-  margin-bottom: 20px;
-}
 */
