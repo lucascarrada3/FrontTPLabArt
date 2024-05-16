@@ -27,13 +27,12 @@ a:hover {
   color: #535bf2;
 }
 
-/* body {
-  margin: 0;
-  display: flex;
-  place-items: center;
-  min-width: 320px;
-  min-height: 100vh;
-} */
+body {
+  height: 100vh; /* Establecer la altura del cuerpo al 100% del viewport height */
+  overflow-y: auto; /* Habilitar el desplazamiento vertical cuando el contenido exceda la altura del viewport */
+  margin: 0; /* Eliminar el margen predeterminado del cuerpo */
+  padding: 0; /* Eliminar el relleno predeterminado del cuerpo */
+}
 
 /* h1 {
   font-size: 3.2em;
@@ -86,6 +85,7 @@ button:focus-visible {
 .content {
   margin-top: 10px;
 }
+
 .logo {
   margin: 0 auto; /* Centra el logo */
 }
@@ -107,7 +107,7 @@ button:focus-visible {
 }
 
 .btn-agregar {
-  position: relative;
+  position: static;
   top: 10px; /* Ajusta según sea necesario para evitar la superposición con la barra de navegación */
   left: 20px; /* Ajusta el valor según sea necesario */
   margin-bottom: 20px;
@@ -243,12 +243,8 @@ button:focus-visible {
   border: none;
 }
 .search-container {
-  position: relative;
-  top: 30px; /* Ajusta según sea necesario para evitar la superposición con la barra de navegación */
-  left: 1600px;
-  z-index: 999;
-  display: flex;
-  align-items: center;
+  text-align: center;
+  margin-bottom: 20px; /* Espacio inferior para separarlo de la tabla */
 }
 
 .search-container input {
@@ -258,21 +254,48 @@ button:focus-visible {
   font-size: 1em;
   font-weight: 500;
   font-family: inherit;
-  background-color: #4b4642;
+  background-color: #eeedec;
   color: #646cff;
   cursor: pointer;
   transition: border-color 0.25s;
-  width: 10vw;
+  width: 50%; /* Ancho del input */
 }
 
-.search-icon {
-  margin-left: 5px;
-  font-size: 1.2em;
+.search-container input:focus {
+  border-color: #646cff;
+}
+.search-options {
+  margin-bottom: 10px; /* Espaciado inferior para separar del resto del contenido */
+}
+
+label {
+  margin-right: 10px; /* Espaciado a la derecha para separar el texto del selector */
+}
+
+select {
+  padding: 8px 15px;
+  border-radius: 5px;
+  border: none;
+  font-size: 16px;
+  background-color: #0e2f9c; /* Color de fondo similar al de tus botones */
+  color: white; /* Color de texto */
+  cursor: pointer; /* Cambiar cursor al pasar sobre el selector */
+}
+
+/* Estilos al pasar sobre el selector */
+select:hover {
+  background-color: #45a049; /* Cambiar color de fondo al pasar sobre el selector */
+}
+
+.abm{
+  text-align: center;
 }
 
 .table-container {
   border: 2px solid white;
   border-collapse: collapse;
+  width: 100%; /* Ancho del 100% */
+  margin: 0 auto; /* Centrar horizontalmente */
 }
 
 .table-container th,
@@ -283,6 +306,7 @@ button:focus-visible {
 }
 
 .table-container th {
-  background-color: #333; /* Color de fondo para las celdas de encabezado */
+  background-color: #2105bd;
 }
+
 

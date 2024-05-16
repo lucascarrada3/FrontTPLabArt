@@ -8,24 +8,22 @@ type ArticuloManufacturado = {
   precio: string;
 };
 
-type Insumo = {
-  codigo: number;
-  nombre: string;
-  esParaElaborar: boolean;
-};
+const insumosEjemplo = ["Tomate", "Lechuga", "Carne"];
 
 function ArticuloManufacturado() {
   const [articulos, setArticulos] = useState<ArticuloManufacturado[]>([]);
-  const [insumos, setInsumos] = useState<Insumo[]>([]);
+  const [filtro, setFiltro] = useState<string>("");
+  const [mostrarModalAgregarArticulo, setMostrarModalAgregarArticulo] = useState(false);
+  const [mostrarModalModificarArticulo, setMostrarModalModificarArticulo] = useState(false);
+  const [articuloSeleccionado, setArticuloSeleccionado] = useState<ArticuloManufacturado | null>(null);
   const [nuevoArticuloNombre, setNuevoArticuloNombre] = useState("");
   const [nuevoArticuloCategoria, setNuevoArticuloCategoria] = useState("");
   const [nuevoArticuloPrecio, setNuevoArticuloPrecio] = useState("");
+  const [criterio, setCriterio] = useState("codigo");
   const [mostrarModalInsumos, setMostrarModalInsumos] = useState(false);
-  const [mostrarModalModificarArticulo, setMostrarModalModificarArticulo] = useState(false);
-  const [articuloSeleccionado, setArticuloSeleccionado] = useState<ArticuloManufacturado | null>(null);
-  const [nuevoInsumoNombre, setNuevoInsumoNombre] = useState("");
-  const [nuevoInsumoEsParaElaborar, setNuevoInsumoEsParaElaborar] = useState(false);
 
+
+  const insumosEjemplo = ['Tomate', 'Lechuga', 'Carne'];
   const handleAgregarArticulo = () => {
     if (nuevoArticuloNombre.trim() === "" || nuevoArticuloPrecio.trim() === "" || nuevoArticuloCategoria.trim() === "") {
       alert("Por favor, complete todos los campos del artículo.");
@@ -43,161 +41,296 @@ function ArticuloManufacturado() {
     // Agregar el artículo manufacturado
     setArticulos([...articulos, nuevoArticulo]);
 
-    // Crear automáticamente los insumos asociados al artículo
-    const nuevosInsumos = [...insumos];
-    for (let i = 0; i < 3; i++) { // Crear 3 insumos por cada artículo
-      const nuevoInsumo: Insumo = {
-        codigo: insumos.length + 1, // Generar un código único para el nuevo insumo
-        nombre: `Insumo ${insumos.length + 1}`,
-        esParaElaborar: false
-      };
-      nuevosInsumos.push(nuevoInsumo);
-    }
-    setInsumos(nuevosInsumos);
-
     // Limpiar los campos del formulario
     setNuevoArticuloNombre("");
     setNuevoArticuloCategoria("");
     setNuevoArticuloPrecio("");
+  
+    // Cerrar el modal de agregar artículo
+    setMostrarModalAgregarArticulo(false);
+  };
+  
+  const handleChangeCriterio = (e: { target: { value: React.SetStateAction<string>; }; }) => {
+    setCriterio(e.target.value);
   };
 
+  const filtrarArticulos = (articulo: ArticuloManufacturado) => {
+    switch (criterio) {
+      case "codigo":
+        return articulo.codigo.toString().includes(filtro);
+      case "nombre":
+        return articulo.nombre.toLowerCase().includes(filtro.toLowerCase());
+      case "precio":
+        return articulo.precio.toLowerCase().includes(filtro.toLowerCase());
+      default:
+        return true;
+    }
+  };
+  
+  const articulosFiltrados = articulos.filter(filtrarArticulos);
+
+  const filteredArticulos = articulos.filter((articulo) => {
+    return (
+      articulo.codigo.toString().includes(filtro) || // Buscar por código
+      articulo.nombre.toLowerCase().includes(filtro.toLowerCase()) || // Buscar por nombre (ignorando mayúsculas/minúsculas)
+      articulo.precio.toLowerCase().includes(filtro.toLowerCase()) // Buscar por categoría (ignorando mayúsculas/minúsculas)
+    );
+  });
+  
   const handleEliminarArticulo = (codigo: number) => {
     const nuevosArticulos = articulos.filter(articulo => articulo.codigo !== codigo);
     setArticulos(nuevosArticulos);
   };
 
-  const handleModificarArticulo = (articulo: ArticuloManufacturado) => {
-    setArticuloSeleccionado(articulo);
-    setMostrarModalModificarArticulo(true);
+  const handleBuscarArticulo = () => {
+    let resultados: ArticuloManufacturado[] = [];
+    if (criterio === 'codigo') {
+      resultados = articulos.filter(articulo => articulo.codigo.toString().includes(filtro));
+    } else if (criterio === 'nombre') {
+      resultados = articulos.filter(articulo => articulo.nombre.toLowerCase().includes(filtro.toLowerCase()));
+    } else if (criterio === 'precio') {
+      resultados = articulos.filter(articulo => articulo.precio.toLowerCase().includes(filtro.toLowerCase()));
+    }
+    //setResultadoBusqueda(resultados);
   };
 
+  const handleModificarArticulo = (articulo: ArticuloManufacturado) => {
+    // Mostrar el modal de modificar artículo y establecer los valores del artículo seleccionado en el estado
+    setArticuloSeleccionado(articulo);
+    setNuevoArticuloNombre(articulo.nombre);
+    setNuevoArticuloCategoria(articulo.categoria);
+    setNuevoArticuloPrecio(articulo.precio);
+    setMostrarModalModificarArticulo(true);
+  };
   const handleCerrarModalModificarArticulo = () => {
     setMostrarModalModificarArticulo(false);
   };
 
   const handleGuardarModificacionArticulo = () => {
-    // Aquí puedes implementar la lógica para guardar la modificación del artículo
-    // Por simplicidad, solo cerramos el modal
-    setMostrarModalModificarArticulo(false);
+    if (!articuloSeleccionado) return;
+
+    // Crear una copia de la lista de artículos
+    const nuevosArticulos = [...articulos];
+
+    // Encontrar el índice del artículo a modificar
+    const indiceArticulo = nuevosArticulos.findIndex(articulo => articulo.codigo === articuloSeleccionado.codigo);
+
+    // Si el artículo está en la lista, actualizar sus datos
+    if (indiceArticulo !== -1) {
+      nuevosArticulos[indiceArticulo] = {
+        ...articuloSeleccionado,
+        nombre: nuevoArticuloNombre,
+        categoria: nuevoArticuloCategoria,
+        precio: nuevoArticuloPrecio
+      };
+
+      // Actualizar el estado de los artículos
+      setArticulos(nuevosArticulos);
+
+      // Cerrar el modal de modificar artículo
+      setMostrarModalModificarArticulo(false);
+    }
   };
 
   const handleCerrarModalInsumos = () => {
+    setArticuloSeleccionado(null);
     setMostrarModalInsumos(false);
   };
 
-  const handleAgregarInsumo = () => {
-    // Aquí puedes implementar la lógica para agregar un insumo
+  const handleIncrementarInsumo = (insumo: string) => {
+    // Implementa lógica para incrementar el contador del insumo seleccionado
   };
 
-  const handleEliminarInsumo = (codigo: number) => {
-    // Aquí puedes implementar la lógica para eliminar un insumo
+  const handleDecrementarInsumo = (insumo: string) => {
+    // Implementa lógica para decrementar el contador del insumo seleccionado
+  };
+  
+  const handleGuardarArticulo = () => {
+    if (!articuloSeleccionado) return;
+  
+    // Crear una copia de la lista de artículos
+    const nuevosArticulos = [...articulos];
+  
+    // Encontrar el índice del artículo a modificar
+    const indiceArticulo = nuevosArticulos.findIndex(articulo => articulo.codigo === articuloSeleccionado.codigo);
+  
+    // Si el artículo está en la lista, actualizar sus datos
+    if (indiceArticulo !== -1) {
+      nuevosArticulos[indiceArticulo] = {
+        ...articuloSeleccionado,
+        nombre: nuevoArticuloNombre,
+        categoria: nuevoArticuloCategoria,
+        precio: nuevoArticuloPrecio
+      };
+  
+      // Actualizar el estado de los artículos
+      setArticulos(nuevosArticulos);
+  
+      // Limpiar los campos del formulario
+      setNuevoArticuloNombre("");
+      setNuevoArticuloCategoria("");
+      setNuevoArticuloPrecio("");
+  
+      // Cerrar el modal de modificar artículo
+      setMostrarModalModificarArticulo(false);
+    }
+  };
+  
+  const handleVerInsumos = () => {
+    alert('Insumos: ' + insumosEjemplo.join(', '));
+    // Aquí puedes abrir un modal con la lista de insumos
   };
 
   return (
     <div>
       {/* Contenido existente */}
       <div className="content">
-        <h2>ABM de Artículos Manufacturados</h2>
-        <div>
-          <label>Nombre:</label>
-          <input
-            type="text"
-            value={nuevoArticuloNombre}
-            onChange={(e) => setNuevoArticuloNombre(e.target.value)}
-          />
-        </div>
-        <div>
-          <label>Categoría:</label>
-          <input
-            type="text"
-            value={nuevoArticuloCategoria}
-            onChange={(e) => setNuevoArticuloCategoria(e.target.value)}
-          />
-        </div>
-        <div>
-          <label>Precio:</label>
-          <input
-            type="text"
-            value={nuevoArticuloPrecio}
-            onChange={(e) => setNuevoArticuloPrecio(e.target.value)}
-          />
-        </div>
-        <button onClick={handleAgregarArticulo}>Agregar Artículo</button>
-
-        <table className="table-container">
-          <thead>
-            <tr>
-              <th>Código</th>
-              <th>Nombre</th>
-              <th>Categoría</th>
-              <th>Precio</th>
-              <th>Modificar</th>
-              <th>Eliminar</th>
-            </tr>
-          </thead>
-          <tbody>
-            {articulos.map(articulo => (
-              <tr key={articulo.codigo}>
-                <td>{articulo.codigo}</td>
-                <td>{articulo.nombre}</td>
-                <td>{articulo.categoria}</td>
-                <td>{articulo.precio}</td>
-                <td>
-                  <button onClick={() => handleModificarArticulo(articulo)}>Modificar</button>
-                </td>
-                <td>
-                  <button onClick={() => handleEliminarArticulo(articulo.codigo)}>Eliminar</button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <h2 className="abm">ABM de Artículos Manufacturados</h2>
+        <div className="search-container">
+        <select value={criterio} onChange={handleChangeCriterio}>
+    <option value="codigo">Código</option>
+    <option value="nombre">Nombre</option>
+    <option value="precio">Precio</option>
+  </select>
+        <input
+          type="text"
+          placeholder="Buscar..."
+          value={filtro}
+          onChange={(e) => setFiltro(e.target.value)}
+        />
       </div>
 
-      {/* Modal para modificar el artículo */}
+        <button onClick={() => setMostrarModalAgregarArticulo(true)}>Agregar Artículo</button>
+
+        <table className="table-container">
+        <thead>
+          <tr>
+            <th>Código</th>
+            <th>Nombre</th>
+            <th>Categoría</th>
+            <th>Precio</th>
+            <th>Modificar</th>
+            <th>Eliminar</th>
+            <th>Insumos</th> {/* Nueva columna para los insumos */}
+          </tr>
+        </thead>
+        <tbody>
+          {articulos.filter(filtrarArticulos).map((articulo: ArticuloManufacturado) => (
+            <tr key={articulo.codigo}>
+              <td>{articulo.codigo}</td>
+              <td>{articulo.nombre}</td>
+              <td>{articulo.categoria}</td>
+              <td>{articulo.precio}</td>
+              <td>
+                <button onClick={() => handleModificarArticulo(articulo)}>Modificar</button>
+              </td>
+              <td>
+                <button onClick={() => handleEliminarArticulo(articulo.codigo)}>Eliminar</button>
+              </td>
+              <td>
+                <button onClick={handleVerInsumos}>Insumos</button>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      </div>
+
+      {/* Modal para agregar artículo */}
+      {mostrarModalAgregarArticulo && (
+        <div className="modal">
+          <div className="modal-content">
+            <span className="close" onClick={() => setMostrarModalAgregarArticulo(false)}>&times;</span>
+            <h2>Agregar Artículo</h2>
+            {/* Formulario para agregar artículo */}
+            <div>
+              <label>Nombre:</label>
+              <input
+                type="text"
+                value={nuevoArticuloNombre}
+                onChange={(e) => setNuevoArticuloNombre(e.target.value)}
+              />
+            </div>
+            <div>
+              <label>Categoría:</label>
+              <input
+                type="text"
+                value={nuevoArticuloCategoria}
+                onChange={(e) => setNuevoArticuloCategoria(e.target.value)}
+              />
+            </div>
+            <div>
+              <label>Precio:</label>
+              <input
+                type="text"
+                value={nuevoArticuloPrecio}
+                onChange={(e) => setNuevoArticuloPrecio(e.target.value)}
+              />
+            </div>
+            <button onClick={handleAgregarArticulo}>Agregar</button>
+          </div>
+        </div>
+      )}
+
+      {/* Modal para modificar artículo */}
       {mostrarModalModificarArticulo && (
         <div className="modal">
           <div className="modal-content">
             <span className="close" onClick={handleCerrarModalModificarArticulo}>&times;</span>
             <h2>Modificar Artículo</h2>
-            {/* Aquí puedes agregar los campos para modificar el artículo */}
-            <button onClick={handleGuardarModificacionArticulo}>Guardar</button>
+            {/* Formulario para modificar artículo */}
+            <div>
+              <label>Nombre:</label>
+              <input
+                type="text"
+                value={nuevoArticuloNombre}
+                onChange={(e) => setNuevoArticuloNombre(e.target.value)}
+              />
+            </div>
+            <div>
+              <label>Categoría:</label>
+              <input
+                type="text"
+                value={nuevoArticuloCategoria}
+                onChange={(e) => setNuevoArticuloCategoria(e.target.value)}
+              />
+            </div>
+            <div>
+              <label>Precio:</label>
+              <input
+                type="text"
+                value={nuevoArticuloPrecio}
+                onChange={(e) => setNuevoArticuloPrecio(e.target.value)}
+              />
+            </div>
+            <button onClick={handleGuardarArticulo}>Guardar</button>
+
           </div>
         </div>
       )}
-
-      {/* Modal para mostrar los insumos */}
+        
+        {/* Modal para mostrar insumos */}
       {mostrarModalInsumos && (
         <div className="modal">
           <div className="modal-content">
             <span className="close" onClick={handleCerrarModalInsumos}>&times;</span>
-            <h2>Insumos Asociados al Artículo</h2>
-            <table>
-              <thead>
-                <tr>
-                  <th>Código</th>
-                  <th>Nombre</th>
-                  <th>Es Para Elaborar</th>
-                  <th>Eliminar</th>
-                </tr>
-              </thead>
-              <tbody>
-                {insumos.map(insumo => (
-                  <tr key={insumo.codigo}>
-                    <td>{insumo.codigo}</td>
-                    <td>{insumo.nombre}</td>
-                    <td>{insumo.esParaElaborar ? 'Sí' : 'No'}</td>
-                    <td>
-                      <button onClick={() => handleEliminarInsumo(insumo.codigo)}>Eliminar</button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+            <h2>Insumos del Artículo: {articuloSeleccionado?.nombre}</h2>
+            {/* Lista de insumos */}
+            <ul>
+              {insumosEjemplo.map((insumo, index) => (
+                <li key={index}>
+                  {insumo}
+                  <button onClick={() => handleIncrementarInsumo(insumo)}>+</button>
+                  <span>0</span>
+                  <button onClick={() => handleDecrementarInsumo(insumo)}>-</button>
+                </li>
+              ))}
+            </ul>
           </div>
         </div>
       )}
     </div>
+    
   );
 }
 
