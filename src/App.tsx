@@ -1,309 +1,199 @@
 import React, { useState } from 'react';
-import logo from './Imagenes/Buen Sabor.png';
-import carrito from './Imagenes/carrito.png';
 import './App.css';
 
-type Carta = {
-  id: number;
-  foto: string;
-  descripcion: string;
+type ArticuloManufacturado = {
+  codigo: number;
+  nombre: string;
+  categoria: string;
   precio: string;
-  ingredientes: string;
-  titulo: string;
-  contadores: { [key: string]: number }; // Agrega este campo
 };
 
+type Insumo = {
+  codigo: number;
+  nombre: string;
+  esParaElaborar: boolean;
+};
 
-function App() {
-  const [modalOpen, setModalOpen] = useState(false);
-  const [cartas, setCartas] = useState<Carta[]>([]);
-  const [nuevaCarta, setNuevaCarta] = useState<Carta>({
-    id: 0,
-    foto: '',
-    descripcion: '',
-    precio: '$',
-    ingredientes: '',
-    titulo: '',
-    contadores: { tomate: 0, lechuga: 0, carne: 0, huevo: 0, cheddar: 0 }
-  });
-  const [editandoCarta, setEditandoCarta] = useState<number | null>(null);
-  const [contadores, setContadores] = useState({
-    tomate: 0,
-    lechuga: 0,
-    carne: 0,
-    huevo: 0,
-    cheddar: 0
-  });
+function ArticuloManufacturado() {
+  const [articulos, setArticulos] = useState<ArticuloManufacturado[]>([]);
+  const [insumos, setInsumos] = useState<Insumo[]>([]);
+  const [nuevoArticuloNombre, setNuevoArticuloNombre] = useState("");
+  const [nuevoArticuloCategoria, setNuevoArticuloCategoria] = useState("");
+  const [nuevoArticuloPrecio, setNuevoArticuloPrecio] = useState("");
+  const [mostrarModalInsumos, setMostrarModalInsumos] = useState(false);
+  const [mostrarModalModificarArticulo, setMostrarModalModificarArticulo] = useState(false);
+  const [articuloSeleccionado, setArticuloSeleccionado] = useState<ArticuloManufacturado | null>(null);
+  const [nuevoInsumoNombre, setNuevoInsumoNombre] = useState("");
+  const [nuevoInsumoEsParaElaborar, setNuevoInsumoEsParaElaborar] = useState(false);
 
-  const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = event.target;
-    setNuevaCarta(prevState => ({
-      ...prevState,
-      [name]: value
-    }));
-  };
+  const handleAgregarArticulo = () => {
+    if (nuevoArticuloNombre.trim() === "" || nuevoArticuloPrecio.trim() === "" || nuevoArticuloCategoria.trim() === "") {
+      alert("Por favor, complete todos los campos del artículo.");
+      return;
+    }
 
-  // const handleCheckboxChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-  //   const { name, checked } = event.target;
-  //   const ingredientes = [...nuevaCarta.ingredientes.split(',')];
+    const nuevoCodigo = articulos.length + 1; // Generar un código único para el nuevo artículo
+    const nuevoArticulo: ArticuloManufacturado = {
+      codigo: nuevoCodigo,
+      nombre: nuevoArticuloNombre,
+      categoria: nuevoArticuloCategoria,
+      precio: nuevoArticuloPrecio
+    };
 
-  //   if (checked) {
-  //     ingredientes.push(name);
-  //     incrementarContador(name as keyof typeof contadores);
-  //   } else {
-  //     const index = ingredientes.indexOf(name);
-  //     if (index !== -1) {
-  //       ingredientes.splice(index, 1);
-  //       decrementarContador(name as keyof typeof contadores);
-  //     }
-  //   }
+    // Agregar el artículo manufacturado
+    setArticulos([...articulos, nuevoArticulo]);
 
-  //   setNuevaCarta(prevState => ({
-  //     ...prevState,
-  //     ingredientes: ingredientes.join(',')
-  //   }));
-  // };
-  
-  const incrementarContador = (name: keyof typeof contadores) => {
-    setContadores(prevState => ({
-      ...prevState,
-      [name]: prevState[name] + 1
-    }));
-    setNuevaCarta(prevState => ({
-      ...prevState,
-      ingredientes: prevState.ingredientes ? prevState.ingredientes + ',' + name : name
-    }));
-  };
-
-  const decrementarContador = (name: keyof typeof contadores) => {
-    setContadores(prevState => ({
-      ...prevState,
-      [name]: Math.max(prevState[name] - 1, 0)
-    }));
-    setNuevaCarta(prevState => {
-      const ingredientesArray = prevState.ingredientes.split(',');
-      const index = ingredientesArray.indexOf(name);
-      if (index !== -1) {
-        ingredientesArray.splice(index, 1);
-      }
-      return {
-        ...prevState,
-        ingredientes: ingredientesArray.join(',')
+    // Crear automáticamente los insumos asociados al artículo
+    const nuevosInsumos = [...insumos];
+    for (let i = 0; i < 3; i++) { // Crear 3 insumos por cada artículo
+      const nuevoInsumo: Insumo = {
+        codigo: insumos.length + 1, // Generar un código único para el nuevo insumo
+        nombre: `Insumo ${insumos.length + 1}`,
+        esParaElaborar: false
       };
-    });
+      nuevosInsumos.push(nuevoInsumo);
+    }
+    setInsumos(nuevosInsumos);
+
+    // Limpiar los campos del formulario
+    setNuevoArticuloNombre("");
+    setNuevoArticuloCategoria("");
+    setNuevoArticuloPrecio("");
   };
 
-  // const handleTextAreaChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
-  //   const { name, value } = event.target;
-  //   setNuevaCarta(prevState => ({
-  //     ...prevState,
-  //     [name]: value
-  //   }));
-  // };
-
-  const handleAgregarCarta = () => {
-    if (editandoCarta !== null) {
-      const nuevasCartas = cartas.map(carta =>
-        carta.id === editandoCarta ? { ...nuevaCarta, contadores: contadores } : carta
-      );
-      setCartas(nuevasCartas);
-      setEditandoCarta(null);
-    } else {
-      const nuevasCartas = [...cartas, { ...nuevaCarta, id: cartas.length + 1, contadores: { ...contadores } }];
-      setCartas(nuevasCartas);
-    }
-    resetearFormulario();
-    setModalOpen(false);
-  }; 
-  
-  
-
-  const handleEliminarCarta = (id: number) => {
-    if (window.confirm('¿Estás seguro de que quieres eliminar esta carta?')) {
-      const nuevasCartas = cartas.filter(carta => carta.id !== id);
-      setCartas(nuevasCartas);
-    }
+  const handleEliminarArticulo = (codigo: number) => {
+    const nuevosArticulos = articulos.filter(articulo => articulo.codigo !== codigo);
+    setArticulos(nuevosArticulos);
   };
 
-  const handleEditarCarta = (id: number) => {
-    const cartaEditar = cartas.find(carta => carta.id === id);
-    if (cartaEditar) {
-      // Restablecer los contadores
-      const newContadores: { [key: string]: number } = {
-        tomate: 0,
-        lechuga: 0,
-        carne: 0,
-        huevo: 0,
-        cheddar: 0
-      };
-  
-      // Incrementar los contadores con los ingredientes de la carta que se está editando
-      const ingredientesArray = cartaEditar.ingredientes.split(',');
-      for (const ingrediente of ingredientesArray) {
-        if (newContadores.hasOwnProperty(ingrediente)) {
-          newContadores[ingrediente as keyof typeof newContadores] += 1;
-        }
-      }
-  
-      // Actualizar el estado de los contadores
-      setContadores(newContadores as { tomate: number; lechuga: number; carne: number; huevo: number; cheddar: number; });
-  
-      // Establecer la carta a editar y abrir el modal de edición
-      setNuevaCarta(cartaEditar);
-      setEditandoCarta(id);
-      setModalOpen(true);
-    }
+  const handleModificarArticulo = (articulo: ArticuloManufacturado) => {
+    setArticuloSeleccionado(articulo);
+    setMostrarModalModificarArticulo(true);
   };
-  
-  const resetearFormulario = () => {
-    setNuevaCarta({
-      id: 0,
-      foto: '',
-      descripcion: '',
-      precio: '$',
-      ingredientes: '',
-      titulo: '',
-      contadores: { tomate: 0, lechuga: 0, carne: 0, huevo: 0, cheddar: 0 }
-    });
-    setContadores({
-      tomate: 0,
-      lechuga: 0,
-      carne: 0,
-      huevo: 0,
-      cheddar: 0
-    });
+
+  const handleCerrarModalModificarArticulo = () => {
+    setMostrarModalModificarArticulo(false);
+  };
+
+  const handleGuardarModificacionArticulo = () => {
+    // Aquí puedes implementar la lógica para guardar la modificación del artículo
+    // Por simplicidad, solo cerramos el modal
+    setMostrarModalModificarArticulo(false);
+  };
+
+  const handleCerrarModalInsumos = () => {
+    setMostrarModalInsumos(false);
+  };
+
+  const handleAgregarInsumo = () => {
+    // Aquí puedes implementar la lógica para agregar un insumo
+  };
+
+  const handleEliminarInsumo = (codigo: number) => {
+    // Aquí puedes implementar la lógica para eliminar un insumo
   };
 
   return (
     <div>
-      <header className="navbar">
-        <div className="logo">
-          <img src={logo} alt="BuenSabor" />
-        </div>
-        <nav className="navbar-nav">
-          <ul>
-            <li>
-              <div className="cart-icon" onClick={() => setModalOpen(true)}>
-                <img src={carrito} alt="Carrito" />
-              </div>
-            </li>
-          </ul>
-        </nav>
-      </header>
-
-      <button className="btn-agregar" onClick={() => setModalOpen(true)}>Agregar Carta</button>
-
+      {/* Contenido existente */}
       <div className="content">
-        <ul className="card-list">
-        {cartas.map(carta => (
-  <li key={carta.id} className="card">
-    <img src={carta.foto} alt="Imagen de la carta" />
-    <div className="card-info">
-      <h2>{carta.titulo}</h2>
-      <h3>{carta.descripcion}</h3>
-      <div>
-        {Object.entries(carta.contadores).map(([ingrediente, cantidad]) => (
-          cantidad > 0 && (
-            <p key={ingrediente}>{ingrediente}: {cantidad}</p>
-          )
-        ))}
-      </div>
-      <h1>{carta.precio}</h1>
-      <div>
-        <button onClick={() => handleEliminarCarta(carta.id)}>
-          <span role="img" aria-label="Eliminar">🗑️</span>
-        </button>
-        {' '}
-        <button onClick={() => handleEditarCarta(carta.id)}>✏️</button>
-      </div>
-    </div>
-  </li>
-))}
-        </ul>
+        <h2>ABM de Artículos Manufacturados</h2>
+        <div>
+          <label>Nombre:</label>
+          <input
+            type="text"
+            value={nuevoArticuloNombre}
+            onChange={(e) => setNuevoArticuloNombre(e.target.value)}
+          />
+        </div>
+        <div>
+          <label>Categoría:</label>
+          <input
+            type="text"
+            value={nuevoArticuloCategoria}
+            onChange={(e) => setNuevoArticuloCategoria(e.target.value)}
+          />
+        </div>
+        <div>
+          <label>Precio:</label>
+          <input
+            type="text"
+            value={nuevoArticuloPrecio}
+            onChange={(e) => setNuevoArticuloPrecio(e.target.value)}
+          />
+        </div>
+        <button onClick={handleAgregarArticulo}>Agregar Artículo</button>
+
+        <table className="table-container">
+          <thead>
+            <tr>
+              <th>Código</th>
+              <th>Nombre</th>
+              <th>Categoría</th>
+              <th>Precio</th>
+              <th>Modificar</th>
+              <th>Eliminar</th>
+            </tr>
+          </thead>
+          <tbody>
+            {articulos.map(articulo => (
+              <tr key={articulo.codigo}>
+                <td>{articulo.codigo}</td>
+                <td>{articulo.nombre}</td>
+                <td>{articulo.categoria}</td>
+                <td>{articulo.precio}</td>
+                <td>
+                  <button onClick={() => handleModificarArticulo(articulo)}>Modificar</button>
+                </td>
+                <td>
+                  <button onClick={() => handleEliminarArticulo(articulo.codigo)}>Eliminar</button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
 
-      {modalOpen && (
+      {/* Modal para modificar el artículo */}
+      {mostrarModalModificarArticulo && (
         <div className="modal">
           <div className="modal-content">
-            <span className="close" onClick={() => setModalOpen(false)}>&times;</span>
-            <h2>{editandoCarta !== null ? 'Editar Carta' : 'Agregar Carta'}</h2>
-            <form>
-              <div className="form-group">
-                <label htmlFor="foto">URL de la imagen:</label>
-                <input
-                  type="text"
-                  id="foto"
-                  name="foto"
-                  value={nuevaCarta.foto}
-                  onChange={handleInputChange}
-                />
-              </div>
-              <div className="form-group">
-                <label htmlFor="titulo">Título:</label>
-                <input
-                  type="text"
-                  id="titulo"
-                  name="titulo"
-                  value={nuevaCarta.titulo}
-                  onChange={handleInputChange}
-                />
-              </div>
-              <div className="form-group">
-                <label htmlFor="descripcion">Descripción:</label>
-                <input
-                  type="text"
-                  id="descripcion"
-                  name="descripcion"
-                  value={nuevaCarta.descripcion}
-                  onChange={handleInputChange}
-                />
-              </div>
-              <div className="form-group">
-                <label htmlFor="precio">Precio:</label>
-                <input
-                  type="text"
-                  id="precio"
-                  name="precio"
-                  value={nuevaCarta.precio}
-                  onChange={handleInputChange}
-                />
-              </div>
-              <div id="ingredientes-container">
-                  <div>
-                    <span>Tomate:</span>
-                    <button type="button" onClick={() => incrementarContador('tomate')}>+</button>
-                    <span>{contadores.tomate}</span>
-                    <button type="button" onClick={() => decrementarContador('tomate')}>-</button>
-                  </div>
-                  <div>
-                    <span>Lechuga:</span>
-                    <button type="button" onClick={() => incrementarContador('lechuga')}>+</button>
-                    <span>{contadores.lechuga}</span>
-                    <button type="button" onClick={() => decrementarContador('lechuga')}>-</button>
-                  </div>
-                  <div>
-                    <span>Carne:</span>
-                    <button type="button" onClick={() => incrementarContador('carne')}>+</button>
-                    <span>{contadores.carne}</span>
-                    <button type="button" onClick={() => decrementarContador('carne')}>-</button>
-                  </div>
-                  <div>
-                    <span>Huevo:</span>
-                    <button type="button" onClick={() => incrementarContador('huevo')}>+</button>
-                    <span>{contadores.huevo}</span>
-                    <button type="button" onClick={() => decrementarContador('huevo')}>-</button>
-                  </div>
-                  <div>
-                    <span>Cheddar:</span>
-                    <button type="button" onClick={() => incrementarContador('cheddar')}>+</button>
-                    <span>{contadores.cheddar}</span>
-                    <button type="button" onClick={() => decrementarContador('cheddar')}>-</button>
-                  </div>
-                </div>
-              <button type="button" onClick={handleAgregarCarta}>
-                {editandoCarta !== null ? 'Guardar' : 'Agregar'}
-              </button>
-            </form>
+            <span className="close" onClick={handleCerrarModalModificarArticulo}>&times;</span>
+            <h2>Modificar Artículo</h2>
+            {/* Aquí puedes agregar los campos para modificar el artículo */}
+            <button onClick={handleGuardarModificacionArticulo}>Guardar</button>
+          </div>
+        </div>
+      )}
+
+      {/* Modal para mostrar los insumos */}
+      {mostrarModalInsumos && (
+        <div className="modal">
+          <div className="modal-content">
+            <span className="close" onClick={handleCerrarModalInsumos}>&times;</span>
+            <h2>Insumos Asociados al Artículo</h2>
+            <table>
+              <thead>
+                <tr>
+                  <th>Código</th>
+                  <th>Nombre</th>
+                  <th>Es Para Elaborar</th>
+                  <th>Eliminar</th>
+                </tr>
+              </thead>
+              <tbody>
+                {insumos.map(insumo => (
+                  <tr key={insumo.codigo}>
+                    <td>{insumo.codigo}</td>
+                    <td>{insumo.nombre}</td>
+                    <td>{insumo.esParaElaborar ? 'Sí' : 'No'}</td>
+                    <td>
+                      <button onClick={() => handleEliminarInsumo(insumo.codigo)}>Eliminar</button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         </div>
       )}
@@ -311,4 +201,4 @@ function App() {
   );
 }
 
-export default App;
+export default ArticuloManufacturado;
