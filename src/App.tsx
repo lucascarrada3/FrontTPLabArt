@@ -1,107 +1,113 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import './App.css';
+
+type Insumo = {
+  id: number;
+  nombre: string;
+  precio: number;
+};
 
 type ArticuloManufacturado = {
   codigo: number;
   nombre: string;
   categoria: string;
-  precio: string;
+  precio: number;
+  insumos: { insumo: Insumo, cantidad: number }[];
 };
-
-const insumosEjemplo = ["Tomate", "Lechuga", "Carne"];
 
 function ArticuloManufacturado() {
   const [articulos, setArticulos] = useState<ArticuloManufacturado[]>([]);
   const [filtro, setFiltro] = useState<string>("");
   const [mostrarModalAgregarArticulo, setMostrarModalAgregarArticulo] = useState(false);
   const [mostrarModalModificarArticulo, setMostrarModalModificarArticulo] = useState(false);
+  const [mostrarModalInsumos, setMostrarModalInsumos] = useState(false);
   const [articuloSeleccionado, setArticuloSeleccionado] = useState<ArticuloManufacturado | null>(null);
   const [nuevoArticuloNombre, setNuevoArticuloNombre] = useState("");
   const [nuevoArticuloCategoria, setNuevoArticuloCategoria] = useState("");
-  const [nuevoArticuloPrecio, setNuevoArticuloPrecio] = useState("");
+  const [nuevoArticuloPrecio, setNuevoArticuloPrecio] = useState<number>(0);
+  const [insumosDisponibles, setInsumosDisponibles] = useState<Insumo[]>([]);
+  const [precioTotalInsumos, setPrecioTotalInsumos] = useState<number>(0);
   const [criterio, setCriterio] = useState("codigo");
-  const [mostrarModalInsumos, setMostrarModalInsumos] = useState(false);
 
+  useEffect(() => {
+    // Simula la llamada al backend para obtener insumos disponibles
+    const fetchInsumos = async () => {
+      // Simulación de datos del backend
+      const insumos: Insumo[] = [
+        { id: 1, nombre: 'Tomate', precio: 1.5 },
+        { id: 2, nombre: 'Lechuga', precio: 0.8 },
+        { id: 3, nombre: 'Queso', precio: 2.0 }
+      ];
+      setInsumosDisponibles(insumos);
+    };
 
-  const insumosEjemplo = ['Tomate', 'Lechuga', 'Carne'];
+    fetchInsumos();
+  }, []);
+
+  const handleAbrirModalAgregarArticulo = () => {
+    resetearValoresArticulo();
+    setMostrarModalAgregarArticulo(true);
+  };
+
   const handleAgregarArticulo = () => {
-    if (nuevoArticuloNombre.trim() === "" || nuevoArticuloPrecio.trim() === "" || nuevoArticuloCategoria.trim() === "") {
+    if (nuevoArticuloNombre.trim() === "" || nuevoArticuloCategoria.trim() === "" || nuevoArticuloPrecio <= 0) {
       alert("Por favor, complete todos los campos del artículo.");
       return;
     }
 
-    const nuevoCodigo = articulos.length + 1; // Generar un código único para el nuevo artículo
+    const nuevoCodigo = articulos.length + 1;
     const nuevoArticulo: ArticuloManufacturado = {
       codigo: nuevoCodigo,
       nombre: nuevoArticuloNombre,
       categoria: nuevoArticuloCategoria,
-      precio: nuevoArticuloPrecio
+      precio: nuevoArticuloPrecio,
+      insumos: []
     };
 
-    // Agregar el artículo manufacturado
     setArticulos([...articulos, nuevoArticulo]);
-
-    // Limpiar los campos del formulario
     setNuevoArticuloNombre("");
     setNuevoArticuloCategoria("");
-    setNuevoArticuloPrecio("");
-  
-    // Cerrar el modal de agregar artículo
+    setNuevoArticuloPrecio(0);
     setMostrarModalAgregarArticulo(false);
   };
-  
+
   const handleChangeCriterio = (e: { target: { value: React.SetStateAction<string>; }; }) => {
     setCriterio(e.target.value);
   };
 
   const filtrarArticulos = (articulo: ArticuloManufacturado) => {
-    switch (criterio) {
-      case "codigo":
-        return articulo.codigo.toString().includes(filtro);
-      case "nombre":
-        return articulo.nombre.toLowerCase().includes(filtro.toLowerCase());
-      case "precio":
-        return articulo.precio.toLowerCase().includes(filtro.toLowerCase());
-      default:
-        return true;
+    if (filtro.trim() === "") {
+      return true; // Si el filtro está vacío, mostrar todos los artículos
+    } else {
+      switch (criterio) {
+        case "codigo":
+          return articulo.codigo.toString() === filtro; // Filtrar exactamente por código
+        case "nombre":
+          return articulo.nombre.toLowerCase() === filtro.toLowerCase(); // Filtrar exactamente por nombre
+        case "precio":
+          return articulo.precio.toString() === filtro; // Filtrar exactamente por precio
+        default:
+          return true;
+      }
     }
   };
   
-  const articulosFiltrados = articulos.filter(filtrarArticulos);
 
-  const filteredArticulos = articulos.filter((articulo) => {
-    return (
-      articulo.codigo.toString().includes(filtro) || // Buscar por código
-      articulo.nombre.toLowerCase().includes(filtro.toLowerCase()) || // Buscar por nombre (ignorando mayúsculas/minúsculas)
-      articulo.precio.toLowerCase().includes(filtro.toLowerCase()) // Buscar por categoría (ignorando mayúsculas/minúsculas)
-    );
-  });
-  
   const handleEliminarArticulo = (codigo: number) => {
+    if (window.confirm('¿Estás seguro de que quieres eliminar este artículo?')) {
     const nuevosArticulos = articulos.filter(articulo => articulo.codigo !== codigo);
     setArticulos(nuevosArticulos);
-  };
-
-  const handleBuscarArticulo = () => {
-    let resultados: ArticuloManufacturado[] = [];
-    if (criterio === 'codigo') {
-      resultados = articulos.filter(articulo => articulo.codigo.toString().includes(filtro));
-    } else if (criterio === 'nombre') {
-      resultados = articulos.filter(articulo => articulo.nombre.toLowerCase().includes(filtro.toLowerCase()));
-    } else if (criterio === 'precio') {
-      resultados = articulos.filter(articulo => articulo.precio.toLowerCase().includes(filtro.toLowerCase()));
-    }
-    //setResultadoBusqueda(resultados);
+  }
   };
 
   const handleModificarArticulo = (articulo: ArticuloManufacturado) => {
-    // Mostrar el modal de modificar artículo y establecer los valores del artículo seleccionado en el estado
     setArticuloSeleccionado(articulo);
     setNuevoArticuloNombre(articulo.nombre);
     setNuevoArticuloCategoria(articulo.categoria);
     setNuevoArticuloPrecio(articulo.precio);
     setMostrarModalModificarArticulo(true);
   };
+
   const handleCerrarModalModificarArticulo = () => {
     setMostrarModalModificarArticulo(false);
   };
@@ -109,13 +115,9 @@ function ArticuloManufacturado() {
   const handleGuardarModificacionArticulo = () => {
     if (!articuloSeleccionado) return;
 
-    // Crear una copia de la lista de artículos
     const nuevosArticulos = [...articulos];
-
-    // Encontrar el índice del artículo a modificar
     const indiceArticulo = nuevosArticulos.findIndex(articulo => articulo.codigo === articuloSeleccionado.codigo);
 
-    // Si el artículo está en la lista, actualizar sus datos
     if (indiceArticulo !== -1) {
       nuevosArticulos[indiceArticulo] = {
         ...articuloSeleccionado,
@@ -124,125 +126,224 @@ function ArticuloManufacturado() {
         precio: nuevoArticuloPrecio
       };
 
-      // Actualizar el estado de los artículos
       setArticulos(nuevosArticulos);
-
-      // Cerrar el modal de modificar artículo
       setMostrarModalModificarArticulo(false);
     }
   };
 
-  const handleCerrarModalInsumos = () => {
-    setArticuloSeleccionado(null);
-    setMostrarModalInsumos(false);
+  const handleAbrirModalInsumos = (articulo: ArticuloManufacturado) => {
+    setArticuloSeleccionado(articulo);
+    setPrecioTotalInsumos(0);
+    setMostrarModalInsumos(true);
   };
 
-  const handleIncrementarInsumo = (insumo: string) => {
-    // Implementa lógica para incrementar el contador del insumo seleccionado
-  };
-
-  const handleDecrementarInsumo = (insumo: string) => {
-    // Implementa lógica para decrementar el contador del insumo seleccionado
-  };
-  
-  const handleGuardarArticulo = () => {
+  const handleAgregarInsumo = (insumo: Insumo, cantidad: number) => {
     if (!articuloSeleccionado) return;
   
-    // Crear una copia de la lista de artículos
-    const nuevosArticulos = [...articulos];
+    const insumoExistente = articuloSeleccionado.insumos.find(i => i.insumo.id === insumo.id);
+    const nuevaCantidad = insumoExistente ? insumoExistente.cantidad + cantidad : cantidad;
   
-    // Encontrar el índice del artículo a modificar
-    const indiceArticulo = nuevosArticulos.findIndex(articulo => articulo.codigo === articuloSeleccionado.codigo);
+    if (nuevaCantidad < 0) return; // Evitar cantidades negativas
   
-    // Si el artículo está en la lista, actualizar sus datos
-    if (indiceArticulo !== -1) {
-      nuevosArticulos[indiceArticulo] = {
+    const insumosActualizados = articuloSeleccionado.insumos.map(i => {
+      if (i.insumo.id === insumo.id) {
+        return { ...i, cantidad: i.cantidad + cantidad };
+      }
+      return i;
+    });
+  
+    if (insumoExistente) {
+      setArticuloSeleccionado({
         ...articuloSeleccionado,
-        nombre: nuevoArticuloNombre,
-        categoria: nuevoArticuloCategoria,
-        precio: nuevoArticuloPrecio
-      };
+        insumos: insumosActualizados
+      });
+    } else {
+      setArticuloSeleccionado({
+        ...articuloSeleccionado,
+        insumos: [...articuloSeleccionado.insumos, { insumo, cantidad }]
+      });
+    }
   
-      // Actualizar el estado de los artículos
-      setArticulos(nuevosArticulos);
+    setPrecioTotalInsumos(precioTotalInsumos + (insumo.precio * cantidad));
+  };
   
-      // Limpiar los campos del formulario
-      setNuevoArticuloNombre("");
-      setNuevoArticuloCategoria("");
-      setNuevoArticuloPrecio("");
+  const handleActualizarInsumo = (insumo: Insumo, delta: number) => {
+    if (!articuloSeleccionado) return;
   
-      // Cerrar el modal de modificar artículo
-      setMostrarModalModificarArticulo(false);
+    const insumoExistente = articuloSeleccionado.insumos.find(i => i.insumo.id === insumo.id);
+    const nuevaCantidad = insumoExistente ? insumoExistente.cantidad + delta : 1;
+  
+    if (nuevaCantidad < 0) return; // Evitar cantidades negativas
+  
+    const insumosActualizados = articuloSeleccionado.insumos.map(i => {
+      if (i.insumo.id === insumo.id) {
+        return { ...i, cantidad: i.cantidad + delta };
+      }
+      return i;
+    });
+  
+    if (insumoExistente) {
+      setArticuloSeleccionado({
+        ...articuloSeleccionado,
+        insumos: insumosActualizados
+      });
+    } else {
+      setArticuloSeleccionado({
+        ...articuloSeleccionado,
+        insumos: [...articuloSeleccionado.insumos, { insumo, cantidad: 1 }]
+      });
+    }
+  
+    setPrecioTotalInsumos(precioTotalInsumos + (insumo.precio * delta));
+  };
+  
+  const resetearValoresArticulo = () => {
+    setNuevoArticuloNombre('');
+    setNuevoArticuloCategoria('');
+    setNuevoArticuloPrecio(0);
+  };
+  
+  const handleCerrarModalAgregarArticulo = () => {
+    resetearValoresArticulo();
+    setMostrarModalAgregarArticulo(false);
+  };  
+
+  const handleCerrarModalInsumos = () => {
+    setMostrarModalInsumos(false);
+
+    if (articuloSeleccionado) {
+      const nuevosArticulos = [...articulos];
+      const indiceArticulo = nuevosArticulos.findIndex(articulo => articulo.codigo === articuloSeleccionado.codigo);
+
+      if (indiceArticulo !== -1) {
+        nuevosArticulos[indiceArticulo] = {
+          ...articuloSeleccionado,
+          precio: articuloSeleccionado.precio + precioTotalInsumos
+        };
+
+        setArticulos(nuevosArticulos);
+        setArticuloSeleccionado(null);
+      }
+    }
+  };
+
+  const handleResetearContadorInsumo = () => {
+    if (!articuloSeleccionado) return;
+  
+    // Calcular el precio total de los insumos
+    const precioTotalInsumos = articuloSeleccionado.insumos.reduce((total, insumo) => {
+      return total + (insumo.insumo.precio * insumo.cantidad);
+    }, 0);
+  
+    // Restar el precio total de los insumos al precio del artículo
+    const precioArticuloActualizado = articuloSeleccionado.precio - precioTotalInsumos;
+  
+    // Actualizar el precio del artículo y resetear el contador de insumos
+    setArticuloSeleccionado({
+      ...articuloSeleccionado,
+      precio: precioArticuloActualizado,
+      insumos: []
+    });
+  
+    // Resetear el precio total de los insumos a cero
+    setPrecioTotalInsumos(0);
+  };
+  
+  const handleEliminarInsumo = (insumoId: number) => {
+    if (!articuloSeleccionado) return;
+  
+    const insumoExistente = articuloSeleccionado.insumos.find(i => i.insumo.id === insumoId);
+  
+    if (insumoExistente) {
+      // Calcular el precio total del insumo a eliminar
+      const precioInsumoEliminar = insumoExistente.insumo.precio * insumoExistente.cantidad;
+  
+      // Restar el precio del insumo eliminado del precio total de los insumos
+      const precioTotalActualizado = precioTotalInsumos - precioInsumoEliminar;
+  
+      // Actualizar el precio total de los insumos
+      setPrecioTotalInsumos(precioTotalActualizado);
+  
+      // Filtrar los insumos para eliminar el insumo seleccionado
+      const insumosFiltrados = articuloSeleccionado.insumos.filter(i => i.insumo.id !== insumoId);
+  
+      // Calcular el precio total de los insumos restantes
+      const precioInsumosRestantes = insumosFiltrados.reduce((total, insumo) => {
+        return total + (insumo.insumo.precio * insumo.cantidad);
+      }, 0);
+  
+      // Restar el precio total de los insumos restantes al precio del artículo
+      const precioArticuloActualizado = articuloSeleccionado.precio - precioInsumosRestantes;
+  
+      // Actualizar los insumos del artículo y el precio del artículo
+      setArticuloSeleccionado({
+        ...articuloSeleccionado,
+        precio: precioArticuloActualizado,
+        insumos: insumosFiltrados
+      });
     }
   };
   
-  const handleVerInsumos = () => {
-    alert('Insumos: ' + insumosEjemplo.join(', '));
-    // Aquí puedes abrir un modal con la lista de insumos
-  };
 
   return (
     <div>
-      {/* Contenido existente */}
       <div className="content">
         <h2 className="abm">ABM de Artículos Manufacturados</h2>
         <div className="search-container">
-        <select value={criterio} onChange={handleChangeCriterio}>
-    <option value="codigo">Código</option>
-    <option value="nombre">Nombre</option>
-    <option value="precio">Precio</option>
-  </select>
-        <input
-          type="text"
-          placeholder="Buscar..."
-          value={filtro}
-          onChange={(e) => setFiltro(e.target.value)}
-        />
-      </div>
+          <select value={criterio} onChange={handleChangeCriterio}>
+            <option value="codigo">Código</option>
+            <option value="nombre">Nombre</option>
+            <option value="precio">Precio</option>
+          </select>
+          <input
+            type="text"
+            placeholder="Buscar..."
+            value={filtro}
+            onChange={(e) => setFiltro(e.target.value)}
+          />
+        </div>
 
-        <button onClick={() => setMostrarModalAgregarArticulo(true)}>Agregar Artículo</button>
+        <button className="btn-agregar" onClick={handleAbrirModalAgregarArticulo}>Agregar Artículo</button>
 
         <table className="table-container">
-        <thead>
-          <tr>
-            <th>Código</th>
-            <th>Nombre</th>
-            <th>Categoría</th>
-            <th>Precio</th>
-            <th>Modificar</th>
-            <th>Eliminar</th>
-            <th>Insumos</th> {/* Nueva columna para los insumos */}
-          </tr>
-        </thead>
-        <tbody>
-          {articulos.filter(filtrarArticulos).map((articulo: ArticuloManufacturado) => (
-            <tr key={articulo.codigo}>
-              <td>{articulo.codigo}</td>
-              <td>{articulo.nombre}</td>
-              <td>{articulo.categoria}</td>
-              <td>{articulo.precio}</td>
-              <td>
-                <button onClick={() => handleModificarArticulo(articulo)}>Modificar</button>
-              </td>
-              <td>
-                <button onClick={() => handleEliminarArticulo(articulo.codigo)}>Eliminar</button>
-              </td>
-              <td>
-                <button onClick={handleVerInsumos}>Insumos</button>
-              </td>
+          <thead>
+            <tr>
+              <th>Código</th>
+              <th>Nombre</th>
+              <th>Categoría</th>
+              <th>Precio</th>
+              <th className="modificar">Modificar</th>
+              <th className="eliminar">Eliminar</th>
+              <th className="insumos">Insumos</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {articulos.filter(filtrarArticulos).map((articulo: ArticuloManufacturado) => (
+              <tr key={articulo.codigo}>
+                <td >{articulo.codigo}</td>
+                <td>{articulo.nombre}</td>
+                <td>{articulo.categoria}</td>
+                <td>{articulo.precio.toFixed(2)}</td>
+                <td>
+                  <button className="modificar" onClick={() => handleModificarArticulo(articulo)}>Modificar</button>
+                </td>
+                <td>
+                  <button className="eliminar" onClick={() => handleEliminarArticulo(articulo.codigo)}>Eliminar</button>
+                </td>
+                <td>
+                  <button className="insumos" onClick={() => handleAbrirModalInsumos(articulo)}>Insumos</button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
 
-      {/* Modal para agregar artículo */}
       {mostrarModalAgregarArticulo && (
         <div className="modal">
           <div className="modal-content">
             <span className="close" onClick={() => setMostrarModalAgregarArticulo(false)}>&times;</span>
             <h2>Agregar Artículo</h2>
-            {/* Formulario para agregar artículo */}
             <div>
               <label>Nombre:</label>
               <input
@@ -262,9 +363,9 @@ function ArticuloManufacturado() {
             <div>
               <label>Precio:</label>
               <input
-                type="text"
+                type="number"
                 value={nuevoArticuloPrecio}
-                onChange={(e) => setNuevoArticuloPrecio(e.target.value)}
+                onChange={(e) => setNuevoArticuloPrecio(parseFloat(e.target.value))}
               />
             </div>
             <button onClick={handleAgregarArticulo}>Agregar</button>
@@ -272,13 +373,11 @@ function ArticuloManufacturado() {
         </div>
       )}
 
-      {/* Modal para modificar artículo */}
       {mostrarModalModificarArticulo && (
         <div className="modal">
           <div className="modal-content">
             <span className="close" onClick={handleCerrarModalModificarArticulo}>&times;</span>
             <h2>Modificar Artículo</h2>
-            {/* Formulario para modificar artículo */}
             <div>
               <label>Nombre:</label>
               <input
@@ -298,39 +397,43 @@ function ArticuloManufacturado() {
             <div>
               <label>Precio:</label>
               <input
-                type="text"
+                type="number"
                 value={nuevoArticuloPrecio}
-                onChange={(e) => setNuevoArticuloPrecio(e.target.value)}
+                onChange={(e) => setNuevoArticuloPrecio(parseFloat(e.target.value))}
               />
             </div>
-            <button onClick={handleGuardarArticulo}>Guardar</button>
+            <button onClick={handleGuardarModificacionArticulo}>Guardar</button>
+          </div>
+        </div>
+      )}
 
+{mostrarModalInsumos && (
+  <div className="modal">
+    <div className="modal-content">
+      <span className="close" onClick={handleCerrarModalInsumos}>&times;</span>
+      <h2>Agregar Insumo</h2>
+      <div>
+        {insumosDisponibles.map((insumo) => (
+          <div key={insumo.id}>
+            <span>{insumo.nombre}  ${insumo.precio.toFixed(2)}</span>
+            {' '}
+            <button onClick={() => handleActualizarInsumo(insumo, -1)}>-</button>
+            {' '}
+            <button onClick={() => handleActualizarInsumo(insumo, 1)}>+</button>
+            {' '}          
+          
+            <span>Cantidad: {articuloSeleccionado?.insumos.find(i => i.insumo.id === insumo.id)?.cantidad || 0}</span>
           </div>
-        </div>
-      )}
-        
-        {/* Modal para mostrar insumos */}
-      {mostrarModalInsumos && (
-        <div className="modal">
-          <div className="modal-content">
-            <span className="close" onClick={handleCerrarModalInsumos}>&times;</span>
-            <h2>Insumos del Artículo: {articuloSeleccionado?.nombre}</h2>
-            {/* Lista de insumos */}
-            <ul>
-              {insumosEjemplo.map((insumo, index) => (
-                <li key={index}>
-                  {insumo}
-                  <button onClick={() => handleIncrementarInsumo(insumo)}>+</button>
-                  <span>0</span>
-                  <button onClick={() => handleDecrementarInsumo(insumo)}>-</button>
-                </li>
-              ))}
-            </ul>
-          </div>
-        </div>
-      )}
+        ))}
+      </div>
+      <button onClick={handleCerrarModalInsumos}>Guardar</button>
+      {' '}
+      <button onClick={handleResetearContadorInsumo}>Resetear</button>
     </div>
-    
+  </div>
+)}
+
+    </div>
   );
 }
 

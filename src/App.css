@@ -5,7 +5,7 @@
 
   color-scheme: light dark;
   color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
+  background-color: #7a7878;
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -70,17 +70,6 @@ button:focus-visible {
     background-color: #f9f9f9;
   }
 }  */
-.navbar {
-  position: static; /* Establece el encabezado como fijo */
-  width: 100%;
-  background-color: rgb(255, 196, 0);
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 5px 15px;
-  z-index: 999; /* Asegura que esté por encima de otros elementos */
-  width: 100vw;
-}
 
 .content {
   margin-top: 10px;
@@ -107,13 +96,14 @@ button:focus-visible {
 }
 
 .btn-agregar {
-  position: static;
-  top: 10px; /* Ajusta según sea necesario para evitar la superposición con la barra de navegación */
-  left: 20px; /* Ajusta el valor según sea necesario */
-  margin-bottom: 20px;
+  position: relative;
+  top: 20px; /* Ajusta según sea necesario para evitar la superposición con la barra de navegación */
+  left: 100px; /* Ajusta el valor según sea necesario */
+  margin-bottom: 40px;
   display: flex;
   justify-content: space-between;
   width: 8vw;
+  background-color: #4983ff;
 }
 
 .cart-icon img {
@@ -277,7 +267,7 @@ select {
   border-radius: 5px;
   border: none;
   font-size: 16px;
-  background-color: #0e2f9c; /* Color de fondo similar al de tus botones */
+  background-color: #4983ff; /* Color de fondo similar al de tus botones */
   color: white; /* Color de texto */
   cursor: pointer; /* Cambiar cursor al pasar sobre el selector */
 }
@@ -292,21 +282,42 @@ select:hover {
 }
 
 .table-container {
-  border: 2px solid white;
+  border: 2px solid #000000;
   border-collapse: collapse;
-  width: 100%; /* Ancho del 100% */
+  width: 90%; /* Ancho del 100% */
   margin: 0 auto; /* Centrar horizontalmente */
+  background-color: #fff;
 }
 
 .table-container th,
 .table-container td {
-  border: 1px solid white;
+  border: 2px solid rgb(0, 0, 0);
   padding: 8px;
-  color: white;
+  color: rgb(7, 7, 7);  
 }
 
 .table-container th {
-  background-color: #2105bd;
+  background-color: #4983ff;
+}
+
+.table-container td.modificar,
+.table-container th.modificar,
+.table-container td.eliminar,
+.table-container th.eliminar,
+.table-container td.insumos, 
+.table-container th.insumos {
+  width: 80px; /* Ajusta este valor al ancho de tus botones */
 }
 
 
+.eliminar {
+  background-color: red; /* Cambiado a rojo */
+}
+
+.modificar {
+  background-color: #4CAF50; /* Cambiado a verde */
+}
+
+.insumos {
+  background-color: #4983ff; /* Cambiado a azul */
+}
