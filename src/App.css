@@ -5,7 +5,7 @@
 
   color-scheme: light dark;
   color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
+  background-color: #7a7878;
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -27,13 +27,12 @@ a:hover {
   color: #535bf2;
 }
 
-/* body {
-  margin: 0;
-  display: flex;
-  place-items: center;
-  min-width: 320px;
-  min-height: 100vh;
-} */
+body {
+  height: 100vh; /* Establecer la altura del cuerpo al 100% del viewport height */
+  overflow-y: auto; /* Habilitar el desplazamiento vertical cuando el contenido exceda la altura del viewport */
+  margin: 0; /* Eliminar el margen predeterminado del cuerpo */
+  padding: 0; /* Eliminar el relleno predeterminado del cuerpo */
+}
 
 /* h1 {
   font-size: 3.2em;
@@ -71,21 +70,11 @@ button:focus-visible {
     background-color: #f9f9f9;
   }
 }  */
-.navbar {
-  position: static; /* Establece el encabezado como fijo */
-  width: 100%;
-  background-color: rgb(255, 196, 0);
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 5px 15px;
-  z-index: 999; /* Asegura que esté por encima de otros elementos */
-  width: 100vw;
-}
 
 .content {
   margin-top: 10px;
 }
+
 .logo {
   margin: 0 auto; /* Centra el logo */
 }
@@ -108,12 +97,13 @@ button:focus-visible {
 
 .btn-agregar {
   position: relative;
-  top: 10px; /* Ajusta según sea necesario para evitar la superposición con la barra de navegación */
-  left: 20px; /* Ajusta el valor según sea necesario */
-  margin-bottom: 20px;
+  top: 20px; /* Ajusta según sea necesario para evitar la superposición con la barra de navegación */
+  left: 100px; /* Ajusta el valor según sea necesario */
+  margin-bottom: 40px;
   display: flex;
   justify-content: space-between;
   width: 8vw;
+  background-color: #4983ff;
 }
 
 .cart-icon img {
@@ -243,12 +233,8 @@ button:focus-visible {
   border: none;
 }
 .search-container {
-  position: relative;
-  top: 30px; /* Ajusta según sea necesario para evitar la superposición con la barra de navegación */
-  left: 1600px;
-  z-index: 999;
-  display: flex;
-  align-items: center;
+  text-align: center;
+  margin-bottom: 20px; /* Espacio inferior para separarlo de la tabla */
 }
 
 .search-container input {
@@ -258,31 +244,95 @@ button:focus-visible {
   font-size: 1em;
   font-weight: 500;
   font-family: inherit;
-  background-color: #4b4642;
+  background-color: #eeedec;
   color: #646cff;
   cursor: pointer;
   transition: border-color 0.25s;
-  width: 10vw;
+  width: 50%; /* Ancho del input */
 }
 
-.search-icon {
-  margin-left: 5px;
-  font-size: 1.2em;
+.search-container input:focus {
+  border-color: #646cff;
+}
+.search-options {
+  margin-bottom: 10px; /* Espaciado inferior para separar del resto del contenido */
+}
+
+label {
+  margin-right: 10px; /* Espaciado a la derecha para separar el texto del selector */
+}
+
+select {
+  padding: 8px 15px;
+  border-radius: 5px;
+  border: none;
+  font-size: 16px;
+  background-color: #4983ff; /* Color de fondo similar al de tus botones */
+  color: white; /* Color de texto */
+  cursor: pointer; /* Cambiar cursor al pasar sobre el selector */
+}
+
+/* Estilos al pasar sobre el selector */
+select:hover {
+  background-color: #45a049; /* Cambiar color de fondo al pasar sobre el selector */
+}
+
+.abm{
+  text-align: center;
 }
 
 .table-container {
-  border: 2px solid white;
+  border: 2px solid #000000;
   border-collapse: collapse;
+  width: 90%; /* Ancho del 100% */
+  margin: 0 auto; /* Centrar horizontalmente */
+  background-color: #fff;
 }
 
 .table-container th,
 .table-container td {
-  border: 1px solid white;
+  border: 2px solid rgb(0, 0, 0);
   padding: 8px;
-  color: white;
+  color: rgb(7, 7, 7);  
 }
 
 .table-container th {
-  background-color: #333; /* Color de fondo para las celdas de encabezado */
+  background-color: #4983ff;
 }
 
+.table-container td.modificar,
+.table-container th.modificar,
+.table-container td.eliminar,
+.table-container th.eliminar,
+.table-container td.insumos, 
+.table-container th.insumos {
+  width: 80px; /* Ajusta este valor al ancho de tus botones */
+}
+
+
+.eliminar {
+  border: none; 
+}
+
+.modificar {
+  background-color: #4CAF50; /* Cambiado a verde */
+}
+
+.insumos {
+  background-color: #4983ff; /* Cambiado a azul */
+}
+
+.disponible {
+  background-color: #d4edda;
+  border: none;
+}
+
+.no-disponible {
+  background-color: #f8d7da;
+}
+
+textarea{
+  width: 100%; /* Asegúrate de que ambos tengan el mismo ancho */
+  box-sizing: border-box; /* Esto hace que el padding y el borde estén incluidos en el ancho */
+  padding: 20px; /* Añade un relleno para que no se vea tan apretado */
+}

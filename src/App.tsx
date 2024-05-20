@@ -1,73 +1,126 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import './App.css';
 
-type ArticuloManufacturado = {
-  codigo: number;
-  nombre: string;
+type Insumo = {
+  id: number;
+  denominacion: string;
   categoria: string;
-  precio: string;
+  precioCompra: number;
+  precioVenta: number;
+  stock: number;
 };
 
-type Insumo = {
-  codigo: number;
-  nombre: string;
-  esParaElaborar: boolean;
+type ArticuloManufacturado = {
+  id: number;
+  denominacion: string;
+  preparacion: string;
+  precioVenta: number;
+  insumos: { insumo: Insumo, cantidad: number }[];
+  disponible: boolean;
 };
 
 function ArticuloManufacturado() {
   const [articulos, setArticulos] = useState<ArticuloManufacturado[]>([]);
-  const [insumos, setInsumos] = useState<Insumo[]>([]);
-  const [nuevoArticuloNombre, setNuevoArticuloNombre] = useState("");
-  const [nuevoArticuloCategoria, setNuevoArticuloCategoria] = useState("");
-  const [nuevoArticuloPrecio, setNuevoArticuloPrecio] = useState("");
-  const [mostrarModalInsumos, setMostrarModalInsumos] = useState(false);
+  const [filtro, setFiltro] = useState<string>("");
+  const [mostrarModalAgregarArticulo, setMostrarModalAgregarArticulo] = useState(false);
   const [mostrarModalModificarArticulo, setMostrarModalModificarArticulo] = useState(false);
+  const [mostrarModalInsumos, setMostrarModalInsumos] = useState(false);
   const [articuloSeleccionado, setArticuloSeleccionado] = useState<ArticuloManufacturado | null>(null);
-  const [nuevoInsumoNombre, setNuevoInsumoNombre] = useState("");
-  const [nuevoInsumoEsParaElaborar, setNuevoInsumoEsParaElaborar] = useState(false);
+  const [nuevoArticulodenominacion, setNuevoArticulodenominacion] = useState("");
+  const [nuevoArticulopreparacion, setNuevoArticulopreparacion] = useState("");
+  const [nuevoArticuloprecioVenta, setNuevoArticuloprecioVenta] = useState<number>(0);
+  const [insumosDisponibles, setInsumosDisponibles] = useState<Insumo[]>([]);
+  const [precioVentaTotalInsumos, setprecioVentaTotalInsumos] = useState<number>(0);
+  const [criterio, setCriterio] = useState("id");
+  
+
+  useEffect(() => {
+    const cargarArticulosDesdeAPI = async () => {
+      try {
+        const response = await fetch('http://localhost:8080/api/articulomanufacturados');
+        const data = await response.json();
+        setArticulos(data);
+      } catch (error) {
+        console.error("Error al cargar los datos desde la API:", error);
+      }
+    };
+    cargarArticulosDesdeAPI();
+  }, []);
+
+  const handleAbrirModalAgregarArticulo = () => {
+    resetearValoresArticulo();
+    setMostrarModalAgregarArticulo(true);
+  };
 
   const handleAgregarArticulo = () => {
-    if (nuevoArticuloNombre.trim() === "" || nuevoArticuloPrecio.trim() === "" || nuevoArticuloCategoria.trim() === "") {
+    if (nuevoArticulodenominacion.trim() === "" || nuevoArticulopreparacion.trim() === "" || nuevoArticuloprecioVenta <= 0) {
       alert("Por favor, complete todos los campos del artículo.");
       return;
     }
 
-    const nuevoCodigo = articulos.length + 1; // Generar un código único para el nuevo artículo
+    const nuevoid = articulos.length + 1;
+
     const nuevoArticulo: ArticuloManufacturado = {
-      codigo: nuevoCodigo,
-      nombre: nuevoArticuloNombre,
-      categoria: nuevoArticuloCategoria,
-      precio: nuevoArticuloPrecio
+      id: nuevoid,
+      denominacion: nuevoArticulodenominacion,
+      preparacion: nuevoArticulopreparacion,
+      precioVenta: nuevoArticuloprecioVenta,
+      insumos: [],
+      disponible: true
     };
 
-    // Agregar el artículo manufacturado
     setArticulos([...articulos, nuevoArticulo]);
-
-    // Crear automáticamente los insumos asociados al artículo
-    const nuevosInsumos = [...insumos];
-    for (let i = 0; i < 3; i++) { // Crear 3 insumos por cada artículo
-      const nuevoInsumo: Insumo = {
-        codigo: insumos.length + 1, // Generar un código único para el nuevo insumo
-        nombre: `Insumo ${insumos.length + 1}`,
-        esParaElaborar: false
-      };
-      nuevosInsumos.push(nuevoInsumo);
-    }
-    setInsumos(nuevosInsumos);
-
-    // Limpiar los campos del formulario
-    setNuevoArticuloNombre("");
-    setNuevoArticuloCategoria("");
-    setNuevoArticuloPrecio("");
+    setNuevoArticulodenominacion("");
+    setNuevoArticulopreparacion("");
+    setNuevoArticuloprecioVenta(0);
+    setMostrarModalAgregarArticulo(false);
   };
 
-  const handleEliminarArticulo = (codigo: number) => {
-    const nuevosArticulos = articulos.filter(articulo => articulo.codigo !== codigo);
+  const handleChangeCriterio = (e: { target: { value: React.SetStateAction<string>; }; }) => {
+    setCriterio(e.target.value);
+  };
+
+  const filtrarArticulos = (articulo: ArticuloManufacturado) => {
+    if (filtro.trim() === "") {
+      return true;
+    } else {
+      switch (criterio) {
+        case "id":
+          return articulo.id.toString().includes(filtro);
+        case "denominacion":
+          return articulo.denominacion.toLowerCase().includes(filtro.toLowerCase());
+        case "precioVenta":
+          return articulo.precioVenta.toString().includes(filtro);
+        default:
+          return true;
+      }
+    }
+  };
+
+  const handleEliminarArticulo = async (id: number) => {
+    const nuevosArticulos = articulos.map(articulo => {
+      if (articulo.id === id) {
+        return { ...articulo, disponible: false }; // Marcamos como no disponible
+      }
+      return articulo;
+    });
     setArticulos(nuevosArticulos);
+  
+    // Actualizamos el estado en la base de datos
+    await fetch(`http://localhost:8080/articulomanufacturados/${id}`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ disponibilidad: false }), // Actualizamos la columna disponibilidad
+    });
   };
 
   const handleModificarArticulo = (articulo: ArticuloManufacturado) => {
     setArticuloSeleccionado(articulo);
+    setNuevoArticulodenominacion(articulo.denominacion);
+    setNuevoArticulopreparacion(articulo.preparacion);
+    setNuevoArticuloprecioVenta(articulo.precioVenta);
     setMostrarModalModificarArticulo(true);
   };
 
@@ -75,78 +128,162 @@ function ArticuloManufacturado() {
     setMostrarModalModificarArticulo(false);
   };
 
+  const handleRestaurarDisponibilidad = async (id: number) => {
+    const nuevosArticulos = articulos.map(articulo => {
+      if (articulo.id === id) {
+        return { ...articulo, disponible: true }; // Marcamos como disponible
+      }
+      return articulo;
+    });
+    setArticulos(nuevosArticulos);
+  
+    // Actualizamos el estado en la base de datos
+    await fetch(`http://localhost:8080/articulomanufacturados/${id}`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ disponible: true }),
+    });
+  };
+
+  const getRowClass = (disponible: boolean) => {
+    return disponible ? 'disponible' : 'no-disponible';
+  };
+
   const handleGuardarModificacionArticulo = () => {
-    // Aquí puedes implementar la lógica para guardar la modificación del artículo
-    // Por simplicidad, solo cerramos el modal
-    setMostrarModalModificarArticulo(false);
+    if (!articuloSeleccionado) return;
+
+    const nuevosArticulos = [...articulos];
+    const indiceArticulo = nuevosArticulos.findIndex(articulo => articulo.id === articuloSeleccionado.id);
+
+    if (indiceArticulo !== -1) {
+      nuevosArticulos[indiceArticulo] = {
+        ...articuloSeleccionado,
+        denominacion: nuevoArticulodenominacion,
+        preparacion: nuevoArticulopreparacion,
+        precioVenta: nuevoArticuloprecioVenta
+      };
+
+      setArticulos(nuevosArticulos);
+      setMostrarModalModificarArticulo(false);
+    }
+  };
+
+  const handleAbrirModalInsumos = (articulo: ArticuloManufacturado) => {
+    setArticuloSeleccionado(articulo);
+    setMostrarModalInsumos(true);
+  };
+
+  const handleActualizarInsumo = (insumo: Insumo, delta: number) => {
+    if (!articuloSeleccionado) return;
+
+    const insumoExistente = articuloSeleccionado.insumos.find(i => i.insumo.id === insumo.id);
+    const nuevaCantidad = insumoExistente ? insumoExistente.cantidad + delta : 1;
+
+    if (nuevaCantidad < 0) return;
+
+    const insumosActualizados = insumoExistente
+      ? articuloSeleccionado.insumos.map(i => i.insumo.id === insumo.id ? { ...i, cantidad: nuevaCantidad } : i)
+      : [...articuloSeleccionado.insumos, { insumo, cantidad: 1 }];
+
+    const nuevoPrecioVenta = insumosActualizados.reduce((total, i) => total + (i.insumo.precioVenta * i.cantidad), 0);
+
+    setArticuloSeleccionado({
+      ...articuloSeleccionado,
+      insumos: insumosActualizados,
+      precioVenta: nuevoPrecioVenta
+    });
+
+    const nuevosArticulos = articulos.map(a => a.id === articuloSeleccionado.id ? { ...articuloSeleccionado, insumos: insumosActualizados, precioVenta: nuevoPrecioVenta } : a);
+    setArticulos(nuevosArticulos);
+  };
+
+  const resetearValoresArticulo = () => {
+    setNuevoArticulodenominacion('');
+    setNuevoArticulopreparacion('');
+    setNuevoArticuloprecioVenta(0);
   };
 
   const handleCerrarModalInsumos = () => {
     setMostrarModalInsumos(false);
+
+    if (articuloSeleccionado) {
+      const nuevosArticulos = [...articulos];
+      const indiceArticulo = nuevosArticulos.findIndex(articulo => articulo.id === articuloSeleccionado.id);
+
+      if (indiceArticulo !== -1) {
+        nuevosArticulos[indiceArticulo] = {
+          ...articuloSeleccionado,
+          precioVenta: articuloSeleccionado.precioVenta + precioVentaTotalInsumos
+        };
+
+        setArticulos(nuevosArticulos);
+        setArticuloSeleccionado(null);
+      }
+    }
   };
 
-  const handleAgregarInsumo = () => {
-    // Aquí puedes implementar la lógica para agregar un insumo
-  };
+  const handleResetearContadorInsumo = () => {
+    if (!articuloSeleccionado) return;
 
-  const handleEliminarInsumo = (codigo: number) => {
-    // Aquí puedes implementar la lógica para eliminar un insumo
+    const precioVentaTotalInsumos = articuloSeleccionado.insumos.reduce((total, insumo) => {
+      return total + (insumo.insumo.precioVenta * insumo.cantidad);
+    }, 0);
+
+    const precioVentaArticuloActualizado = articuloSeleccionado.precioVenta - precioVentaTotalInsumos;
+
+    setArticuloSeleccionado({
+      ...articuloSeleccionado,
+      precioVenta: precioVentaArticuloActualizado,
+      insumos: []
+    });
+
+    setprecioVentaTotalInsumos(0);
   };
 
   return (
     <div>
-      {/* Contenido existente */}
       <div className="content">
-        <h2>ABM de Artículos Manufacturados</h2>
-        <div>
-          <label>Nombre:</label>
+        <h2 className="abm">ABM de Artículos Manufacturados</h2>
+        <div className="search-container">
+          <select value={criterio} onChange={handleChangeCriterio}>
+            <option value="id">Código</option>
+            <option value="denominacion">Denominación</option>
+            <option value="precioVenta">Precio Venta</option>
+          </select>
           <input
             type="text"
-            value={nuevoArticuloNombre}
-            onChange={(e) => setNuevoArticuloNombre(e.target.value)}
+            placeholder="Buscar..."
+            value={filtro}
+            onChange={(e) => setFiltro(e.target.value)}
           />
         </div>
-        <div>
-          <label>Categoría:</label>
-          <input
-            type="text"
-            value={nuevoArticuloCategoria}
-            onChange={(e) => setNuevoArticuloCategoria(e.target.value)}
-          />
-        </div>
-        <div>
-          <label>Precio:</label>
-          <input
-            type="text"
-            value={nuevoArticuloPrecio}
-            onChange={(e) => setNuevoArticuloPrecio(e.target.value)}
-          />
-        </div>
-        <button onClick={handleAgregarArticulo}>Agregar Artículo</button>
+
+        <button className="btn-agregar" onClick={handleAbrirModalAgregarArticulo}>Agregar Artículo</button>
 
         <table className="table-container">
           <thead>
             <tr>
               <th>Código</th>
-              <th>Nombre</th>
-              <th>Categoría</th>
-              <th>Precio</th>
-              <th>Modificar</th>
-              <th>Eliminar</th>
+              <th>Denominación</th>
+              <th>Preparación</th>
+              <th>Precio Venta</th>
+              <th>Acciones</th>
             </tr>
-          </thead>
+            </thead>
           <tbody>
-            {articulos.map(articulo => (
-              <tr key={articulo.codigo}>
-                <td>{articulo.codigo}</td>
-                <td>{articulo.nombre}</td>
-                <td>{articulo.categoria}</td>
-                <td>{articulo.precio}</td>
+            {articulos.filter(filtrarArticulos).map((articulo: ArticuloManufacturado) => (
+              <tr key={articulo.id} className={getRowClass(articulo.disponible)}>
+                <td>{articulo.id}</td>
+                <td>{articulo.denominacion}</td>
+                <td>{articulo.preparacion}</td>
+                <td>${articulo.precioVenta}</td>
                 <td>
-                  <button onClick={() => handleModificarArticulo(articulo)}>Modificar</button>
-                </td>
-                <td>
-                  <button onClick={() => handleEliminarArticulo(articulo.codigo)}>Eliminar</button>
+                  <button className="insumos" onClick={() => handleAbrirModalInsumos(articulo)}>Insumos</button>
+                  <button className="modificar" onClick={() => handleModificarArticulo(articulo)}>✏️</button>
+                  <button className="eliminar" onClick={() => handleEliminarArticulo(articulo.id)}>❌</button>
+                  <button onClick={() => handleRestaurarDisponibilidad(articulo.id)}>✅</button>
                 </td>
               </tr>
             ))}
@@ -154,46 +291,75 @@ function ArticuloManufacturado() {
         </table>
       </div>
 
-      {/* Modal para modificar el artículo */}
-      {mostrarModalModificarArticulo && (
+      {mostrarModalAgregarArticulo && (
         <div className="modal">
           <div className="modal-content">
-            <span className="close" onClick={handleCerrarModalModificarArticulo}>&times;</span>
-            <h2>Modificar Artículo</h2>
-            {/* Aquí puedes agregar los campos para modificar el artículo */}
-            <button onClick={handleGuardarModificacionArticulo}>Guardar</button>
+            <h3>Agregar Artículo</h3>
+            <input
+              type="text"
+              placeholder="Denominación"
+              value={nuevoArticulodenominacion}
+              onChange={(e) => setNuevoArticulodenominacion(e.target.value)}
+            />
+            <textarea
+              placeholder="Preparación"
+              value={nuevoArticulopreparacion}
+              onChange={(e) => setNuevoArticulopreparacion(e.target.value)}
+            ></textarea>
+            <input
+              type="number"
+              placeholder="Precio Venta"
+              value={nuevoArticuloprecioVenta}
+              onChange={(e) => setNuevoArticuloprecioVenta(Number(e.target.value))}
+            />
+            <button className="btn-agregar" onClick={handleAgregarArticulo}>Agregar</button>
+            <button className="btn-cancelar" onClick={() => setMostrarModalAgregarArticulo(false)}>Cancelar</button>
           </div>
         </div>
       )}
 
-      {/* Modal para mostrar los insumos */}
-      {mostrarModalInsumos && (
+      {mostrarModalModificarArticulo && (
         <div className="modal">
           <div className="modal-content">
-            <span className="close" onClick={handleCerrarModalInsumos}>&times;</span>
-            <h2>Insumos Asociados al Artículo</h2>
-            <table>
-              <thead>
-                <tr>
-                  <th>Código</th>
-                  <th>Nombre</th>
-                  <th>Es Para Elaborar</th>
-                  <th>Eliminar</th>
-                </tr>
-              </thead>
-              <tbody>
-                {insumos.map(insumo => (
-                  <tr key={insumo.codigo}>
-                    <td>{insumo.codigo}</td>
-                    <td>{insumo.nombre}</td>
-                    <td>{insumo.esParaElaborar ? 'Sí' : 'No'}</td>
-                    <td>
-                      <button onClick={() => handleEliminarInsumo(insumo.codigo)}>Eliminar</button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+            <h3>Modificar Artículo</h3>
+            <input
+              type="text"
+              placeholder="Denominación"
+              value={nuevoArticulodenominacion}
+              onChange={(e) => setNuevoArticulodenominacion(e.target.value)}
+            />
+            <textarea
+              placeholder="Preparación"
+              value={nuevoArticulopreparacion}
+              onChange={(e) => setNuevoArticulopreparacion(e.target.value)}
+            ></textarea>
+            <input
+              type="number"
+              placeholder="Precio Venta"
+              value={nuevoArticuloprecioVenta}
+              onChange={(e) => setNuevoArticuloprecioVenta(Number(e.target.value))}
+            />
+            <button className="btn-guardar" onClick={handleGuardarModificacionArticulo}>Guardar</button>
+            <button className="btn-cancelar" onClick={handleCerrarModalModificarArticulo}>Cancelar</button>
+          </div>
+        </div>
+      )}
+
+      {mostrarModalInsumos && articuloSeleccionado && (
+        <div className="modal">
+          <div className="modal-content">
+            <h3>Insumos del Artículo</h3>
+            <ul>
+              {articuloSeleccionado.insumos.map((insumo) => (
+                <li key={insumo.insumo.id}>
+                  {insumo.insumo.denominacion} - Cantidad: {insumo.cantidad}
+                  <button onClick={() => handleActualizarInsumo(insumo.insumo, -1)}>-</button>
+                  <button onClick={() => handleActualizarInsumo(insumo.insumo, 1)}>+</button>
+                </li>
+              ))}
+            </ul>
+            <button className="btn-guardar" onClick={handleCerrarModalInsumos}>Cerrar</button>
+            <button className="btn-cancelar" onClick={handleResetearContadorInsumo}>Resetear</button>
           </div>
         </div>
       )}
