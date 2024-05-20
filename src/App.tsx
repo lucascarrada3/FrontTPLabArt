@@ -1,6 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import './App.css';
 
+
+
+const API_URL = 'http://localhost:8080/api';
+
 type Insumo = {
   id: number;
   denominacion: string;
@@ -8,6 +12,7 @@ type Insumo = {
   precioCompra: number;
   precioVenta: number;
   stock: number;
+  stockMaximo: number;
 };
 
 type ArticuloManufacturado = {
@@ -29,9 +34,10 @@ function ArticuloManufacturado() {
   const [nuevoArticulodenominacion, setNuevoArticulodenominacion] = useState("");
   const [nuevoArticulopreparacion, setNuevoArticulopreparacion] = useState("");
   const [nuevoArticuloprecioVenta, setNuevoArticuloprecioVenta] = useState<number>(0);
-  const [insumosDisponibles, setInsumosDisponibles] = useState<Insumo[]>([]);
   const [precioVentaTotalInsumos, setprecioVentaTotalInsumos] = useState<number>(0);
   const [criterio, setCriterio] = useState("id");
+  const [mostrarModalAgregarInsumo, setMostrarModalAgregarInsumo] = useState(false);
+  const [nuevoInsumo, setNuevoInsumo] = useState({ denominacion: '', precioCompra: 0, stock: 0, stockMaximo: 0 });
   
 
   useEffect(() => {
@@ -52,6 +58,58 @@ function ArticuloManufacturado() {
     setMostrarModalAgregarArticulo(true);
   };
 
+  const handleAbrirModalAgregarInsumo = () => {
+    setMostrarModalAgregarInsumo(true);
+  };
+
+  const handleCerrarModalAgregarInsumo = () => {
+    setMostrarModalAgregarInsumo(false);
+  };
+
+  const handleAgregarInsumo = (e) => {
+    e.preventDefault();
+
+    // Crear nuevo insumo
+    const nuevoInsumoObj = {
+      insumo: {
+        id: articuloSeleccionado.insumos.length + 1, // Generar ID simple basado en longitud del array
+        denominacion: nuevoInsumo.denominacion,
+        precioCompra: nuevoInsumo.precioCompra,
+        stock: nuevoInsumo.stock,
+        stockMaximo: nuevoInsumo.stockMaximo
+      }
+    };
+
+    // Actualizar el estado del artículo seleccionado con el nuevo insumo
+    setArticuloSeleccionado((prevArticulo) => ({
+      ...prevArticulo,
+      insumos: [...prevArticulo.insumos, nuevoInsumoObj]
+    }));
+
+    // Limpiar el formulario
+    setNuevoInsumo({
+      denominacion: '',
+      precioCompra: 0,
+      stock: 0,
+      stockMaximo: 0
+    });
+
+    // Cerrar el modal de agregar insumo
+    handleCerrarModalAgregarInsumo();
+  };
+
+  const guardarDatosArticulo = async (id: number) => {
+    try {
+      const response = await fetch('http://localhost:8080/api/articuloinsumo/${id}');
+      const data = await response.json();
+      setArticulos(data);
+    } catch (error) {
+      console.error("Error al cargar los datos desde la API:", error);
+    }
+  };
+  
+
+  
   const handleAgregarArticulo = () => {
     if (nuevoArticulodenominacion.trim() === "" || nuevoArticulopreparacion.trim() === "" || nuevoArticuloprecioVenta <= 0) {
       alert("Por favor, complete todos los campos del artículo.");
@@ -89,8 +147,6 @@ function ArticuloManufacturado() {
           return articulo.id.toString().includes(filtro);
         case "denominacion":
           return articulo.denominacion.toLowerCase().includes(filtro.toLowerCase());
-        case "precioVenta":
-          return articulo.precioVenta.toString().includes(filtro);
         default:
           return true;
       }
@@ -250,7 +306,6 @@ function ArticuloManufacturado() {
           <select value={criterio} onChange={handleChangeCriterio}>
             <option value="id">Código</option>
             <option value="denominacion">Denominación</option>
-            <option value="precioVenta">Precio Venta</option>
           </select>
           <input
             type="text"
@@ -295,25 +350,29 @@ function ArticuloManufacturado() {
         <div className="modal">
           <div className="modal-content">
             <h3>Agregar Artículo</h3>
+            <p>Denominacion</p>
             <input
               type="text"
               placeholder="Denominación"
               value={nuevoArticulodenominacion}
               onChange={(e) => setNuevoArticulodenominacion(e.target.value)}
             />
+            <p>Preparacion</p>
             <textarea
               placeholder="Preparación"
               value={nuevoArticulopreparacion}
               onChange={(e) => setNuevoArticulopreparacion(e.target.value)}
             ></textarea>
+            <p>Precio Venta</p>
             <input
               type="number"
               placeholder="Precio Venta"
               value={nuevoArticuloprecioVenta}
               onChange={(e) => setNuevoArticuloprecioVenta(Number(e.target.value))}
             />
-            <button className="btn-agregar" onClick={handleAgregarArticulo}>Agregar</button>
-            <button className="btn-cancelar" onClick={() => setMostrarModalAgregarArticulo(false)}>Cancelar</button>
+            <button onClick={handleAgregarArticulo}>Agregar</button>
+            {' '}
+            <button onClick={() => setMostrarModalAgregarArticulo(false)}>Cancelar</button>
           </div>
         </div>
       )}
@@ -339,32 +398,91 @@ function ArticuloManufacturado() {
               value={nuevoArticuloprecioVenta}
               onChange={(e) => setNuevoArticuloprecioVenta(Number(e.target.value))}
             />
-            <button className="btn-guardar" onClick={handleGuardarModificacionArticulo}>Guardar</button>
-            <button className="btn-cancelar" onClick={handleCerrarModalModificarArticulo}>Cancelar</button>
+            <button onClick={handleGuardarModificacionArticulo}>Guardar</button>
+            {' '} 
+            <button onClick={handleCerrarModalModificarArticulo}>Cancelar</button>
           </div>
         </div>
       )}
 
-      {mostrarModalInsumos && articuloSeleccionado && (
+{mostrarModalInsumos && articuloSeleccionado && (
         <div className="modal">
           <div className="modal-content">
-            <h3>Insumos del Artículo</h3>
-            <ul>
-              {articuloSeleccionado.insumos.map((insumo) => (
-                <li key={insumo.insumo.id}>
-                  {insumo.insumo.denominacion} - Cantidad: {insumo.cantidad}
-                  <button onClick={() => handleActualizarInsumo(insumo.insumo, -1)}>-</button>
-                  <button onClick={() => handleActualizarInsumo(insumo.insumo, 1)}>+</button>
-                </li>
-              ))}
-            </ul>
-            <button className="btn-guardar" onClick={handleCerrarModalInsumos}>Cerrar</button>
-            <button className="btn-cancelar" onClick={handleResetearContadorInsumo}>Resetear</button>
+            <h3>Insumos del Artículo: {articuloSeleccionado.denominacion}</h3>
+            <button onClick={handleAbrirModalAgregarInsumo}>Agregar Insumo</button>
+            <table>
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Denominación</th>
+                  <th>Precio Compra</th>
+                  <th>Stock Actual</th>
+                  <th>Stock Máximo</th>
+                </tr>
+              </thead>
+              <tbody>
+                {articuloSeleccionado.insumos.map((insumo) => (
+                  <tr key={insumo.insumo.id}>
+                    <td>{insumo.insumo.id}</td>
+                    <td>{insumo.insumo.denominacion}</td>
+                    <td>${insumo.insumo.precioCompra}</td>
+                    <td>{insumo.insumo.stock}</td>
+                    <td>{insumo.insumo.stockMaximo}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            <button className="btn-cerrar" onClick={() => setMostrarModalInsumos(false)}>Cerrar</button>
+          </div>
+        </div>
+      )}
+
+      {mostrarModalAgregarInsumo && (
+        <div className="modal">
+          <div className="modal-content">
+            <h3>Agregar Insumo</h3>
+            <form onSubmit={handleAgregarInsumo}>
+              <label>
+                Denominación:
+                <input
+                  type="text"
+                  value={nuevoInsumo.denominacion}
+                  onChange={(e) => setNuevoInsumo({ ...nuevoInsumo, denominacion: e.target.value })}
+                />
+              </label>
+              <label>
+                Precio Compra:
+                <input
+                  type="number"
+                  value={nuevoInsumo.precioCompra}
+                  onChange={(e) => setNuevoInsumo({ ...nuevoInsumo, precioCompra: parseFloat(e.target.value) })}
+                />
+              </label>
+              <label>
+                Stock:
+                <input
+                  type="number"
+                  value={nuevoInsumo.stock}
+                  onChange={(e) => setNuevoInsumo({ ...nuevoInsumo, stock: parseInt(e.target.value) })}
+                />
+              </label>
+              <label>
+                Stock Máximo:
+                <input
+                  type="number"
+                  value={nuevoInsumo.stockMaximo}
+                  onChange={(e) => setNuevoInsumo({ ...nuevoInsumo, stockMaximo: parseInt(e.target.value) })}
+                />
+              </label>
+              <button type="submit">Guardar</button>
+              <button type="button" onClick={handleCerrarModalAgregarInsumo}>Cerrar</button>
+            </form>
           </div>
         </div>
       )}
     </div>
   );
 }
+
 
 export default ArticuloManufacturado;
