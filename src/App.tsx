@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import './App.css';
 
+const API_URL = 'http://localhost:8080/api';
+
 type Insumo = {
   id: number;
   denominacion: string;
@@ -13,10 +15,12 @@ type Insumo = {
 type ArticuloManufacturado = {
   id: number;
   denominacion: string;
+  descripcion:string;
   preparacion: string;
+  tiempoEstimadoMinutos:number;
   precioVenta: number;
   insumos: { insumo: Insumo, cantidad: number }[];
-  disponible: boolean;
+  eliminado: boolean;
 };
 
 function ArticuloManufacturado() {
@@ -24,20 +28,22 @@ function ArticuloManufacturado() {
   const [filtro, setFiltro] = useState<string>("");
   const [mostrarModalAgregarArticulo, setMostrarModalAgregarArticulo] = useState(false);
   const [mostrarModalModificarArticulo, setMostrarModalModificarArticulo] = useState(false);
-  const [mostrarModalInsumos, setMostrarModalInsumos] = useState(false);
+  // const [mostrarModalInsumos, setMostrarModalInsumos] = useState(false);
   const [articuloSeleccionado, setArticuloSeleccionado] = useState<ArticuloManufacturado | null>(null);
+  const [nuevoArticulodescripcion, setNuevoArticulodescripcion] = useState("");
   const [nuevoArticulodenominacion, setNuevoArticulodenominacion] = useState("");
+  const [nuevoArticulotiempoEstimadoMinutos, setArticulotiempoEstimadoMinutos] = useState<number>(0.0);
   const [nuevoArticulopreparacion, setNuevoArticulopreparacion] = useState("");
   const [nuevoArticuloprecioVenta, setNuevoArticuloprecioVenta] = useState<number>(0);
-  const [insumosDisponibles, setInsumosDisponibles] = useState<Insumo[]>([]);
-  const [precioVentaTotalInsumos, setprecioVentaTotalInsumos] = useState<number>(0);
+  // const [insumosEliminados, setInsumosEliminados] = useState<Insumo[]>([]);
+  // const [precioVentaTotalInsumos, setprecioVentaTotalInsumos] = useState<number>(0);
   const [criterio, setCriterio] = useState("id");
   
-
+//SOLICITUD GET
   useEffect(() => {
     const cargarArticulosDesdeAPI = async () => {
       try {
-        const response = await fetch('http://localhost:8080/api/articulomanufacturados');
+        const response = await fetch(`${API_URL}/articulomanufacturados`);
         const data = await response.json();
         setArticulos(data);
       } catch (error) {
@@ -52,28 +58,81 @@ function ArticuloManufacturado() {
     setMostrarModalAgregarArticulo(true);
   };
 
-  const handleAgregarArticulo = () => {
+  // POST
+  async function createArticuloManufacturado(articulo: ArticuloManufacturado): Promise<ArticuloManufacturado> {
+    const response = await fetch(`${API_URL}/articulomanufacturados`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(articulo)
+    });
+    return response.json();
+  }
+
+  // PUT
+  async function updateArticuloManufacturado(id: number, articulo: ArticuloManufacturado): Promise<ArticuloManufacturado> {
+    const response = await fetch(`${API_URL}/articulomanufacturados/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(articulo)
+    });
+    return response.json();
+  }
+
+  // CREATE ARTICULO
+  const handleAgregarArticulo = async () => {
     if (nuevoArticulodenominacion.trim() === "" || nuevoArticulopreparacion.trim() === "" || nuevoArticuloprecioVenta <= 0) {
       alert("Por favor, complete todos los campos del artículo.");
       return;
     }
 
-    const nuevoid = articulos.length + 1;
-
     const nuevoArticulo: ArticuloManufacturado = {
-      id: nuevoid,
+      id: articulos.length + 1,
       denominacion: nuevoArticulodenominacion,
       preparacion: nuevoArticulopreparacion,
       precioVenta: nuevoArticuloprecioVenta,
+      descripcion: nuevoArticulodescripcion,
+      tiempoEstimadoMinutos: nuevoArticulotiempoEstimadoMinutos,
       insumos: [],
-      disponible: true
+      eliminado: false
     };
 
-    setArticulos([...articulos, nuevoArticulo]);
-    setNuevoArticulodenominacion("");
-    setNuevoArticulopreparacion("");
-    setNuevoArticuloprecioVenta(0);
-    setMostrarModalAgregarArticulo(false);
+    try {
+      const articuloCreado = await createArticuloManufacturado(nuevoArticulo);
+      console.log('Artículo creado:', articuloCreado);
+      // Aquí puedes agregar lógica adicional después de crear el artículo, como actualizar una lista de artículos
+      setMostrarModalAgregarArticulo(false); // Cerrar el modal después de agregar el artículo
+    } catch (error) {
+      console.error('Error al agregar el artículo:', error);
+    }
+  };
+
+  // UPDATE ARTICULO
+  const handleActualizarArticulo = async () => {
+    if (!articuloSeleccionado) return;
+    
+    if (nuevoArticulodenominacion.trim() === "" || nuevoArticulopreparacion.trim() === "" || nuevoArticuloprecioVenta <= 0) {
+      alert("Por favor, complete todos los campos del artículo.");
+      return;
+    }
+
+    const nuevoArticulo: ArticuloManufacturado = {
+      ...articuloSeleccionado, // Mantenemos el ID del artículo seleccionado
+      denominacion: nuevoArticulodenominacion,
+      preparacion: nuevoArticulopreparacion,
+      precioVenta: nuevoArticuloprecioVenta,
+      descripcion: nuevoArticulodescripcion,
+      tiempoEstimadoMinutos: nuevoArticulotiempoEstimadoMinutos,
+      insumos: [],
+      eliminado: false
+    };
+
+    try {
+      const articuloModificado = await updateArticuloManufacturado(articuloSeleccionado.id, nuevoArticulo);
+      setArticulos(articulos.map(art => art.id === articuloModificado.id ? articuloModificado : art));
+      setMostrarModalModificarArticulo(false); // Cerrar el modal después de modificar el artículo
+    } catch (error) {
+      console.error('Error al actualizar el artículo:', error);
+    }
   };
 
   const handleChangeCriterio = (e: { target: { value: React.SetStateAction<string>; }; }) => {
@@ -89,8 +148,6 @@ function ArticuloManufacturado() {
           return articulo.id.toString().includes(filtro);
         case "denominacion":
           return articulo.denominacion.toLowerCase().includes(filtro.toLowerCase());
-        case "precioVenta":
-          return articulo.precioVenta.toString().includes(filtro);
         default:
           return true;
       }
@@ -100,20 +157,27 @@ function ArticuloManufacturado() {
   const handleEliminarArticulo = async (id: number) => {
     const nuevosArticulos = articulos.map(articulo => {
       if (articulo.id === id) {
-        return { ...articulo, disponible: false }; // Marcamos como no disponible
+        return { ...articulo, eliminado: true }; // Marcamos como no disponible
       }
       return articulo;
     });
     setArticulos(nuevosArticulos);
   
-    // Actualizamos el estado en la base de datos
-    await fetch(`http://localhost:8080/articulomanufacturados/${id}`, {
-      method: 'PATCH',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ disponibilidad: false }), // Actualizamos la columna disponibilidad
-    });
+    try {
+      const response = await fetch(`http://localhost:8080/articulomanufacturados/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ eliminado: true }), // Actualizamos la columna disponibilidad
+      });
+  
+      if (!response.ok) {
+        throw new Error('Error en la solicitud PATCH');
+      }
+    } catch (error) {
+      console.error("Error al actualizar el estado del artículo:", error);
+    }
   };
 
   const handleModificarArticulo = (articulo: ArticuloManufacturado) => {
@@ -121,6 +185,8 @@ function ArticuloManufacturado() {
     setNuevoArticulodenominacion(articulo.denominacion);
     setNuevoArticulopreparacion(articulo.preparacion);
     setNuevoArticuloprecioVenta(articulo.precioVenta);
+    setArticulotiempoEstimadoMinutos(articulo.tiempoEstimadoMinutos);
+    setNuevoArticulodescripcion(articulo.descripcion);
     setMostrarModalModificarArticulo(true);
   };
 
@@ -129,128 +195,61 @@ function ArticuloManufacturado() {
   };
 
   const handleRestaurarDisponibilidad = async (id: number) => {
-    const nuevosArticulos = articulos.map(articulo => {
-      if (articulo.id === id) {
-        return { ...articulo, disponible: true }; // Marcamos como disponible
-      }
-      return articulo;
-    });
-    setArticulos(nuevosArticulos);
+    if (!articuloSeleccionado) return;
   
-    // Actualizamos el estado en la base de datos
-    await fetch(`http://localhost:8080/articulomanufacturados/${id}`, {
-      method: 'PATCH',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ disponible: true }),
-    });
+    try {
+      const response = await fetch(`${API_URL}/articulomanufacturados/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          denominacion: nuevoArticulodenominacion,
+          preparacion: nuevoArticulopreparacion,
+          precioVenta: nuevoArticuloprecioVenta,
+          eliminado: true
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Error en la solicitud PUT');
+      }
+  
+      if (response.ok) {
+        const updatedArticulo: ArticuloManufacturado = await response.json();
+        const nuevosArticulos = articulos.map(articulo =>
+          articulo.id === updatedArticulo.id ? updatedArticulo : articulo
+        );
+        setArticulos(nuevosArticulos);
+        setMostrarModalModificarArticulo(false);
+      } else {
+        console.error("Error al guardar la modificación del artículo:", await response.text());
+      }
+    } catch (error) {
+      console.error("Error al guardar la modificación del artículo:", error);
+    }
   };
 
   const getRowClass = (disponible: boolean) => {
     return disponible ? 'disponible' : 'no-disponible';
   };
 
-  const handleGuardarModificacionArticulo = () => {
-    if (!articuloSeleccionado) return;
-
-    const nuevosArticulos = [...articulos];
-    const indiceArticulo = nuevosArticulos.findIndex(articulo => articulo.id === articuloSeleccionado.id);
-
-    if (indiceArticulo !== -1) {
-      nuevosArticulos[indiceArticulo] = {
-        ...articuloSeleccionado,
-        denominacion: nuevoArticulodenominacion,
-        preparacion: nuevoArticulopreparacion,
-        precioVenta: nuevoArticuloprecioVenta
-      };
-
-      setArticulos(nuevosArticulos);
-      setMostrarModalModificarArticulo(false);
-    }
-  };
-
-  const handleAbrirModalInsumos = (articulo: ArticuloManufacturado) => {
-    setArticuloSeleccionado(articulo);
-    setMostrarModalInsumos(true);
-  };
-
-  const handleActualizarInsumo = (insumo: Insumo, delta: number) => {
-    if (!articuloSeleccionado) return;
-
-    const insumoExistente = articuloSeleccionado.insumos.find(i => i.insumo.id === insumo.id);
-    const nuevaCantidad = insumoExistente ? insumoExistente.cantidad + delta : 1;
-
-    if (nuevaCantidad < 0) return;
-
-    const insumosActualizados = insumoExistente
-      ? articuloSeleccionado.insumos.map(i => i.insumo.id === insumo.id ? { ...i, cantidad: nuevaCantidad } : i)
-      : [...articuloSeleccionado.insumos, { insumo, cantidad: 1 }];
-
-    const nuevoPrecioVenta = insumosActualizados.reduce((total, i) => total + (i.insumo.precioVenta * i.cantidad), 0);
-
-    setArticuloSeleccionado({
-      ...articuloSeleccionado,
-      insumos: insumosActualizados,
-      precioVenta: nuevoPrecioVenta
-    });
-
-    const nuevosArticulos = articulos.map(a => a.id === articuloSeleccionado.id ? { ...articuloSeleccionado, insumos: insumosActualizados, precioVenta: nuevoPrecioVenta } : a);
-    setArticulos(nuevosArticulos);
-  };
-
   const resetearValoresArticulo = () => {
     setNuevoArticulodenominacion('');
     setNuevoArticulopreparacion('');
     setNuevoArticuloprecioVenta(0);
-  };
-
-  const handleCerrarModalInsumos = () => {
-    setMostrarModalInsumos(false);
-
-    if (articuloSeleccionado) {
-      const nuevosArticulos = [...articulos];
-      const indiceArticulo = nuevosArticulos.findIndex(articulo => articulo.id === articuloSeleccionado.id);
-
-      if (indiceArticulo !== -1) {
-        nuevosArticulos[indiceArticulo] = {
-          ...articuloSeleccionado,
-          precioVenta: articuloSeleccionado.precioVenta + precioVentaTotalInsumos
-        };
-
-        setArticulos(nuevosArticulos);
-        setArticuloSeleccionado(null);
-      }
-    }
-  };
-
-  const handleResetearContadorInsumo = () => {
-    if (!articuloSeleccionado) return;
-
-    const precioVentaTotalInsumos = articuloSeleccionado.insumos.reduce((total, insumo) => {
-      return total + (insumo.insumo.precioVenta * insumo.cantidad);
-    }, 0);
-
-    const precioVentaArticuloActualizado = articuloSeleccionado.precioVenta - precioVentaTotalInsumos;
-
-    setArticuloSeleccionado({
-      ...articuloSeleccionado,
-      precioVenta: precioVentaArticuloActualizado,
-      insumos: []
-    });
-
-    setprecioVentaTotalInsumos(0);
+    setArticulotiempoEstimadoMinutos(0),
+    setNuevoArticulodescripcion("")
   };
 
   return (
     <div>
       <div className="content">
-        <h2 className="abm">ABM de Artículos Manufacturados</h2>
+        <h2 className="abm">Artículos Manufacturados</h2>
         <div className="search-container">
           <select value={criterio} onChange={handleChangeCriterio}>
             <option value="id">Código</option>
             <option value="denominacion">Denominación</option>
-            <option value="precioVenta">Precio Venta</option>
           </select>
           <input
             type="text"
@@ -269,18 +268,22 @@ function ArticuloManufacturado() {
               <th>Denominación</th>
               <th>Preparación</th>
               <th>Precio Venta</th>
+              <th>Tiempo Estimado en minutos</th>
+              <th>Estado</th>
               <th>Acciones</th>
             </tr>
             </thead>
           <tbody>
             {articulos.filter(filtrarArticulos).map((articulo: ArticuloManufacturado) => (
-              <tr key={articulo.id} className={getRowClass(articulo.disponible)}>
+              <tr key={articulo.id} className={getRowClass(articulo.eliminado)}>
                 <td>{articulo.id}</td>
                 <td>{articulo.denominacion}</td>
                 <td>{articulo.preparacion}</td>
                 <td>${articulo.precioVenta}</td>
+                <td>{articulo.tiempoEstimadoMinutos}</td>
+                <td>{articulo.eliminado ? "OK" : "NOT OK"}</td>
                 <td>
-                  <button className="insumos" onClick={() => handleAbrirModalInsumos(articulo)}>Insumos</button>
+                  {/* <button className="insumos" onClick={(null)}>Insumos</button> */}
                   <button className="modificar" onClick={() => handleModificarArticulo(articulo)}>✏️</button>
                   <button className="eliminar" onClick={() => handleEliminarArticulo(articulo.id)}>❌</button>
                   <button onClick={() => handleRestaurarDisponibilidad(articulo.id)}>✅</button>
@@ -306,11 +309,22 @@ function ArticuloManufacturado() {
               value={nuevoArticulopreparacion}
               onChange={(e) => setNuevoArticulopreparacion(e.target.value)}
             ></textarea>
+            <textarea
+              placeholder="Descripcion"
+              value={nuevoArticulodescripcion}
+              onChange={(e) => setNuevoArticulodescripcion(e.target.value)}
+            ></textarea>
             <input
               type="number"
               placeholder="Precio Venta"
               value={nuevoArticuloprecioVenta}
               onChange={(e) => setNuevoArticuloprecioVenta(Number(e.target.value))}
+            />
+            <input
+              type="number"
+              placeholder="Tiempo estimado en minutos"
+              value={nuevoArticulotiempoEstimadoMinutos}
+              onChange={(e) => setArticulotiempoEstimadoMinutos(Number(e.target.value))}
             />
             <button className="btn-agregar" onClick={handleAgregarArticulo}>Agregar</button>
             <button className="btn-cancelar" onClick={() => setMostrarModalAgregarArticulo(false)}>Cancelar</button>
@@ -333,19 +347,30 @@ function ArticuloManufacturado() {
               value={nuevoArticulopreparacion}
               onChange={(e) => setNuevoArticulopreparacion(e.target.value)}
             ></textarea>
+            <textarea
+              placeholder="Descripcion"
+              value={nuevoArticulodescripcion}
+              onChange={(e) => setNuevoArticulodescripcion(e.target.value)}
+            ></textarea>
             <input
               type="number"
               placeholder="Precio Venta"
               value={nuevoArticuloprecioVenta}
               onChange={(e) => setNuevoArticuloprecioVenta(Number(e.target.value))}
             />
-            <button className="btn-guardar" onClick={handleGuardarModificacionArticulo}>Guardar</button>
+            <input
+              type="number"
+              placeholder="Tiempo estimado en minutos"
+              value={nuevoArticulotiempoEstimadoMinutos}
+              onChange={(e) => setArticulotiempoEstimadoMinutos(Number(e.target.value))}
+            />
+            <button className="btn-guardar" onClick={handleActualizarArticulo}>Guardar</button>
             <button className="btn-cancelar" onClick={handleCerrarModalModificarArticulo}>Cancelar</button>
           </div>
         </div>
       )}
 
-      {mostrarModalInsumos && articuloSeleccionado && (
+      {/* {mostrarModalInsumos && articuloSeleccionado && (
         <div className="modal">
           <div className="modal-content">
             <h3>Insumos del Artículo</h3>
@@ -362,7 +387,7 @@ function ArticuloManufacturado() {
             <button className="btn-cancelar" onClick={handleResetearContadorInsumo}>Resetear</button>
           </div>
         </div>
-      )}
+      )} */}
     </div>
   );
 }
