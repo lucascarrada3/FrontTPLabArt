@@ -311,7 +311,7 @@ select:hover {
 
 
 .eliminar {
-  background-color: red; /* Cambiado a rojo */
+  border: none; 
 }
 
 .modificar {
@@ -320,4 +320,19 @@ select:hover {
 
 .insumos {
   background-color: #4983ff; /* Cambiado a azul */
+}
+
+.disponible {
+  background-color: #d4edda;
+  border: none;
+}
+
+.no-disponible {
+  background-color: #f8d7da;
+}
+
+textarea{
+  width: 100%; /* Asegúrate de que ambos tengan el mismo ancho */
+  box-sizing: border-box; /* Esto hace que el padding y el borde estén incluidos en el ancho */
+  padding: 20px; /* Añade un relleno para que no se vea tan apretado */
 }
