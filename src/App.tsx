@@ -123,7 +123,6 @@ function ArticuloManufacturado() {
       descripcion: nuevoArticulodescripcion,
       tiempoEstimadoMinutos: nuevoArticulotiempoEstimadoMinutos,
       insumos: [],
-      eliminado: false
     };
 
     try {
@@ -155,6 +154,51 @@ function ArticuloManufacturado() {
   };
 
   const handleEliminarArticulo = async (id: number) => {
+    try {
+      const articulo = articulos.find(art => art.id === id);
+      if (!articulo) {
+        throw new Error('Artículo no encontrado');
+      }
+      
+      const articuloActualizado = { ...articulo, eliminado: true };
+
+      const response = await fetch(`${API_URL}/articulomanufacturados/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(articuloActualizado)
+      });
+
+      if (!response.ok) {
+        throw new Error('Error en la solicitud PUT');
+      }
+
+      const articuloModificado = await response.json();
+      setArticulos(articulos.map(art => art.id === articuloModificado.id ? articuloModificado : art));
+    } catch (error) {
+      console.error("Error al actualizar el estado del artículo:", error);
+    }
+  };
+  
+
+  /*const handleEliminarArticulo = async (id: number) => {
+
+    const response = await fetch(`${API_URL}/articulomanufacturados/${id}`);
+    const data = await response.json();
+    setArticulos(data);
+
+    console.log(data);
+
+    const nuevoArticulo: ArticuloManufacturado = {
+      ...articuloSeleccionado, // Mantenemos el ID del artículo seleccionado
+      denominacion: resp,
+      preparacion: nuevoArticulopreparacion,
+      precioVenta: nuevoArticuloprecioVenta,
+      descripcion: nuevoArticulodescripcion,
+      tiempoEstimadoMinutos: nuevoArticulotiempoEstimadoMinutos,
+      insumos: [],
+      eliminado: false
+    };
+
     const nuevosArticulos = articulos.map(articulo => {
       if (articulo.id === id) {
         return { ...articulo, eliminado: true }; // Marcamos como no disponible
@@ -180,6 +224,8 @@ function ArticuloManufacturado() {
     }
   };
 
+  */
+
   const handleModificarArticulo = (articulo: ArticuloManufacturado) => {
     setArticuloSeleccionado(articulo);
     setNuevoArticulodenominacion(articulo.denominacion);
@@ -195,38 +241,28 @@ function ArticuloManufacturado() {
   };
 
   const handleRestaurarDisponibilidad = async (id: number) => {
-    if (!articuloSeleccionado) return;
-  
     try {
+      const articulo = articulos.find(art => art.id === id);
+      if (!articulo) {
+        throw new Error('Artículo no encontrado');
+      }
+      
+      const articuloActualizado = { ...articulo, eliminado: false };
+
       const response = await fetch(`${API_URL}/articulomanufacturados/${id}`, {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          denominacion: nuevoArticulodenominacion,
-          preparacion: nuevoArticulopreparacion,
-          precioVenta: nuevoArticuloprecioVenta,
-          eliminado: true
-        }),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(articuloActualizado)
       });
 
       if (!response.ok) {
         throw new Error('Error en la solicitud PUT');
       }
-  
-      if (response.ok) {
-        const updatedArticulo: ArticuloManufacturado = await response.json();
-        const nuevosArticulos = articulos.map(articulo =>
-          articulo.id === updatedArticulo.id ? updatedArticulo : articulo
-        );
-        setArticulos(nuevosArticulos);
-        setMostrarModalModificarArticulo(false);
-      } else {
-        console.error("Error al guardar la modificación del artículo:", await response.text());
-      }
+
+      const articuloModificado = await response.json();
+      setArticulos(articulos.map(art => art.id === articuloModificado.id ? articuloModificado : art));
     } catch (error) {
-      console.error("Error al guardar la modificación del artículo:", error);
+      console.error("Error al actualizar el estado del artículo:", error);
     }
   };
 
@@ -281,12 +317,12 @@ function ArticuloManufacturado() {
                 <td>{articulo.preparacion}</td>
                 <td>${articulo.precioVenta}</td>
                 <td>{articulo.tiempoEstimadoMinutos}</td>
-                <td>{articulo.eliminado ? "OK" : "NOT OK"}</td>
+                <td>{articulo.eliminado ? "NOT OK" : "OK"}</td>
                 <td>
                   {/* <button className="insumos" onClick={(null)}>Insumos</button> */}
                   <button className="modificar" onClick={() => handleModificarArticulo(articulo)}>✏️</button>
                   <button className="eliminar" onClick={() => handleEliminarArticulo(articulo.id)}>❌</button>
-                  <button onClick={() => handleRestaurarDisponibilidad(articulo.id)}>✅</button>
+                  <button className="restaurar" onClick={() => handleRestaurarDisponibilidad(articulo.id)}>✅</button>
                 </td>
               </tr>
             ))}
