@@ -343,12 +343,12 @@ select:hover {
 }
 
 .disponible {
-  background-color: #d4edda;
+  background-color: #fdbebe;
   border: none;
 }
 
 .no-disponible {
-  background-color: #f8d7da;
+  background-color: #b4ffb2;
 }
 
 textarea{
