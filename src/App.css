@@ -106,6 +106,16 @@ button:focus-visible {
   background-color: #4983ff;
 }
 
+.btn-cancelar {
+  position: relative;
+  top: 20px; /* Ajusta según sea necesario para evitar la superposición con la barra de navegación */
+  margin-bottom: 20px;
+  display: flex;
+  justify-content: space-between;
+  width: 8vw;
+  background-color: #4983ff;
+}
+
 .cart-icon img {
   margin-right: 10px;
   width: 80px;

@@ -1,0 +1,86 @@
+//funcionesAPI
+
+// src/api/FuncionesApi.ts
+import ArticuloManufacturado from "../types/articulomanufacturado";
+import ArticuloInsumo from "../types/articuloinsumos";
+
+//const cors = require('cors');
+const API_URL = 'http://localhost:8080/api';
+
+
+//GETALL
+export async function getAllArticuloManufacturado(): Promise<ArticuloManufacturado> {
+    const response = await fetch(`${API_URL}/articulomanufacturados`, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' }
+    });
+    return response.json();
+}
+
+// Funciones para ArticuloManufacturado
+export async function getArticuloManufacturado(id: number): Promise<ArticuloManufacturado> {
+    const response = await fetch(`${API_URL}/articulomanufacturados/${id}`, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' }
+    });
+    return response.json();
+}
+
+export async function createArticuloManufacturado(articulo: ArticuloManufacturado): Promise<ArticuloManufacturado> {
+    const response = await fetch(`${API_URL}/articulomanufacturados`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(articulo)
+    });
+    return response.json();
+}
+
+export async function updateArticuloManufacturado(id: number, articulo: ArticuloManufacturado): Promise<ArticuloManufacturado> {
+    const response = await fetch(`${API_URL}/articulomanufacturados/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(articulo)
+    });
+    return response.json();
+}
+
+export async function deleteArticuloManufacturado(id: number): Promise<void> {
+    await fetch(`${API_URL}/articulomanufacturados/${id}`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' }
+    });
+}
+
+// Funciones para ArticuloInsumo
+export async function getArticuloInsumo(id: number): Promise<ArticuloInsumo> {
+    const response = await fetch(`${API_URL}/articulosinsumos/${id}`, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' }
+    });
+    return response.json();
+}
+
+export async function createArticuloInsumo(insumo: ArticuloInsumo): Promise<ArticuloInsumo> {
+    const response = await fetch(`${API_URL}/articulosinsumos`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(insumo)
+    });
+    return response.json();
+}
+
+export async function updateArticuloInsumo(id: number, insumo: ArticuloInsumo): Promise<ArticuloInsumo> {
+    const response = await fetch(`${API_URL}/articulosinsumos/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(insumo)
+    });
+    return response.json();
+}
+
+export async function deleteArticuloInsumo(id: number): Promise<void> {
+    await fetch(`${API_URL}/articulosinsumos/${id}`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' }
+    });
+}
