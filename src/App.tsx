@@ -11,20 +11,31 @@ type Insumo = {
   cantidad: number;
   stockMaximo: number;
   esParaElaborar: boolean;
+  unidadMedida: {
+    id: number;
+    denominacion: string;
+  };
+  imagenes: {
+    id: number;
+    url: string;
+  }[];
 };
-
 
 type ArticuloManufacturado = {
   id: number;
   denominacion: string;
-  descripcion:string;
+  descripcion: string;
   preparacion: string;
-  tiempoEstimadoMinutos:number;
+  tiempoEstimadoMinutos: number;
   precioVenta: number;
   insumos: { insumo: Insumo, cantidad: number }[];
   eliminado: boolean;
   disponible: boolean;
 };
+
+// type articuloManufacturadoDetalles = {
+//   cantidad: number;
+// }
 
 function ArticuloManufacturado() {
   const [articulos, setArticulos] = useState<ArticuloManufacturado[]>([]);
@@ -40,7 +51,7 @@ function ArticuloManufacturado() {
   const [nuevoArticuloprecioVenta, setNuevoArticuloprecioVenta] = useState<number>(0);
   // const [insumosEliminados, setInsumosEliminados] = useState<Insumo[]>([]);
   // const [precioVentaTotalInsumos, setprecioVentaTotalInsumos] = useState<number>(0);
-  const [nuevoInsumo, setNuevoInsumo] = useState({ denominacion: '', precioCompra: 0, cantidad: 0, stockMaximo: 0 });
+  const [nuevoInsumo, setNuevoInsumo] = useState({ denominacion: '', precioCompra: 0, cantidad: 0, stockMaximo: 0, esParaElaborar: true, stockActual: 0, });
   const [insumos, setInsumos] = useState<Insumo[]>([]);
   const [mostrarModalInsumos, setMostrarModalInsumos] = useState(false);
   const [mostrarModalAgregarInsumo, setMostrarModalAgregarInsumo] = useState(false);
@@ -77,17 +88,16 @@ function ArticuloManufacturado() {
         throw new Error('Error al obtener los datos del artículo manufacturado');
       }
       const data = await response.json();
-      const insumos = data.articuloManufacturadoDetalles.map((d: { articuloInsumo: any; }) => d.articuloInsumo);
-      console.log(insumos); // Verifica que obtienes los datos de los insumos correctamente
-      setInsumos(insumos);
+      const insumosConCantidad = data.articuloManufacturadoDetalles.map((detalle: any) => ({
+        insumo: detalle.articuloInsumo,
+        cantidad: detalle.cantidad
+      }));
+      setInsumos(insumosConCantidad);
       setMostrarModalInsumos(true);
     } catch (error) {
       console.error(error);
     }
-  };
-  
-  
-  
+  };  
 
   const handleCerrarModalInsumos = () => {
     setMostrarModalInsumos(false);
@@ -160,12 +170,72 @@ function ArticuloManufacturado() {
     setNuevoInsumo({
       denominacion: '',
       precioCompra: 0,
+      precioVenta: 0,
       cantidad: 0,
       stockMaximo: 0,
+      esParaElaborar: false,
+      unidadMedida: {
+        denominacion: '',
+      },
     });
     handleCerrarModalAgregarInsumo();
+
+    // Realizar la solicitud POST
+    fetch('http://localhost:8080/api/articulosinsumos', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(nuevoInsumo),
+    })
+    .then(response => {
+      if (!response.ok) {
+        throw new Error('Hubo un problema al agregar el insumo.');
+      }
+      return response.json();
+    })
+    .then(data => {
+      console.log('Insumo agregado correctamente:', data);
+      // Aquí puedes realizar acciones adicionales si es necesario
+    })
+    .catch(error => {
+      console.error('Error al agregar el insumo:', error);
+    });
+};  
+
+
+  ///////////////////////////AgregarInsumo nuevo //////////////////////////
+
+  const createArticuloInsumo = async (nuevoInsumo: Insumo) => {
+    try {
+      const response = await fetch('http://localhost:8080/api/articulo', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(nuevoInsumo),
+      });
+      if (!response.ok) {
+        throw new Error('Error al crear el nuevo ArticuloInsumo');
+      }
+      const data = await response.json();
+      console.log('ArticuloInsumo creado:', data);
+      // Realizar cualquier acción adicional después de crear el ArticuloInsumo, si es necesario
+    } catch (error) {
+      console.error('Error al crear el nuevo ArticuloInsumo:', error);
+    }
   };
-  
+
+  // const handleAgregarInsumo = (e: React.FormEvent<HTMLFormElement>) => {
+  //   e.preventDefault();
+  //   if (nuevoInsumo.denominacion !== "") {
+  //     createArticuloInsumo(nuevoInsumo);
+  //   } else {
+  //     console.error('Por favor, ingresa una denominación válida para el nuevo insumo.');
+  //   }
+  //   // Restablecer los valores del nuevo insumo y cerrar el modal
+  //   setNuevoInsumo({ denominacion: '', precioCompra: 0, cantidad: 0, stockMaximo: 0 });
+  //   setMostrarModalAgregarInsumo(false);
+  // };
+
 
   ///////////////////////////ARTICULOS///////////////////////////
   
@@ -555,13 +625,13 @@ function ArticuloManufacturado() {
           </tr>
         </thead>
         <tbody>
-          {insumos.map((insumo) => (
+          {insumos.map(({ insumo, cantidad }) => (
             <tr key={insumo.id}>
               <td>{insumo.id}</td>
               <td>{insumo.denominacion}</td>
               <td>${insumo.precioCompra}</td>
               <td>${insumo.precioVenta}</td>
-              <td>{insumo.cantidad}</td>
+              <td>{cantidad} {insumo.unidadMedida.denominacion}</td>
               <td>{insumo.stockMaximo}</td>
               <td>{insumo.esParaElaborar ? 'Sí' : 'No'}</td> {/* Mostrar "Sí" o "No" en lugar de true/false */}
             </tr>
@@ -572,6 +642,7 @@ function ArticuloManufacturado() {
     </div>
   </div>
 )}
+
 
 {mostrarModalAgregarInsumo && (
   <div className="modal">
