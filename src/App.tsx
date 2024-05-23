@@ -9,6 +9,7 @@ type Insumo = {
   precioCompra: number;
   precioVenta: number;
   cantidad: number;
+  stockActual: number;
   stockMaximo: number;
   esParaElaborar: boolean;
   unidadMedida: {
@@ -51,12 +52,13 @@ function ArticuloManufacturado() {
   const [nuevoArticuloprecioVenta, setNuevoArticuloprecioVenta] = useState<number>(0);
   // const [insumosEliminados, setInsumosEliminados] = useState<Insumo[]>([]);
   // const [precioVentaTotalInsumos, setprecioVentaTotalInsumos] = useState<number>(0);
-  const [nuevoInsumo, setNuevoInsumo] = useState({ denominacion: '', precioCompra: 0, cantidad: 0, stockMaximo: 0, esParaElaborar: true, stockActual: 0, });
+  const [nuevoInsumo, setNuevoInsumo] = useState({ denominacion: '', precioCompra: 0, cantidad: 0, stockMaximo: 0, esParaElaborar: true, stockActual: 0, precioVenta: 0});
   const [insumos, setInsumos] = useState<Insumo[]>([]);
   const [mostrarModalInsumos, setMostrarModalInsumos] = useState(false);
   const [mostrarModalAgregarInsumo, setMostrarModalAgregarInsumo] = useState(false);
   const [criterio, setCriterio] = useState("id");
-  const [insumosDisponibles, setInsumosDisponibles] = useState([]);
+  const [insumosDisponibles, setInsumosDisponibles] = useState<Insumo[]>([]);
+  //const [insumosDisponibles, setInsumosDisponibles] = useState([]);
   const [mostrarFormularioNuevoInsumo, setMostrarFormularioNuevoInsumo] = useState(false); 
   const [precioTotalArticulo, setPrecioTotalArticulo] = useState<number>(0); // Estado para el precio total del artículo manufacturado
   
@@ -81,7 +83,7 @@ function ArticuloManufacturado() {
     }
   };
 
-  const handleAbrirModalInsumos = async (id: number) => {
+  const handleAbrirModalInsumos = async (id: number,verificacion: boolean) => {
     try {
       const response = await fetch(`http://localhost:8080/api/articulomanufacturados/${id}`);
       if (!response.ok) {
@@ -93,17 +95,20 @@ function ArticuloManufacturado() {
         cantidad: detalle.cantidad
       }));
       setInsumos(insumosConCantidad);
-      setMostrarModalInsumos(true);
+      if(verificacion){
+        setMostrarModalInsumos(true);
+      }
     } catch (error) {
       console.error(error);
     }
-  };  
+  }; 
 
   const handleCerrarModalInsumos = () => {
     setMostrarModalInsumos(false);
   };
 
-  const handleAbrirModalAgregarInsumo = () => {
+  const handleAbrirModalAgregarInsumo = (id: number) => {
+    handleAbrirModalInsumos(id,false);
     setMostrarModalAgregarInsumo(true);
   };
 
@@ -305,6 +310,7 @@ function ArticuloManufacturado() {
     } catch (error) {
       console.error('Error al agregar el artículo:', error);
     }
+      window.location.reload();
   };
 
   // UPDATE ARTICULO
@@ -333,6 +339,7 @@ function ArticuloManufacturado() {
     } catch (error) {
       console.error('Error al actualizar el artículo:', error);
     }
+    window.location.reload();
   };
 
   const handleChangeCriterio = (e: { target: { value: React.SetStateAction<string>; }; }) => {
@@ -506,7 +513,7 @@ function ArticuloManufacturado() {
               <th>Preparación</th>
               <th>Precio Venta</th>
               <th>Tiempo Estimado en minutos</th>
-              <th>Estado</th>
+              <th>Insumos</th>
               <th>Acciones</th>
             </tr>
             </thead>
@@ -518,9 +525,11 @@ function ArticuloManufacturado() {
                 <td>{articulo.preparacion}</td>
                 <td>${articulo.precioVenta}</td>
                 <td>{articulo.tiempoEstimadoMinutos}</td>
-                <td>{articulo.eliminado ? "NOT OK" : "OK"}</td>
                 <td>
-                  <button className="insumos" onClick={() => handleAbrirModalInsumos(articulo.id)}>Insumos</button>
+                  <button className="insumos" onClick={() => handleAbrirModalInsumos(articulo.id,true)}>Detalle</button>
+                  
+                </td>
+                <td>
                   <button className="modificar" onClick={() => handleModificarArticulo(articulo)}>✏️</button>
                   <button className="eliminar" onClick={() => handleEliminarArticulo(articulo.id)}>❌</button>
                   <button className="restaurar" onClick={() => handleRestaurarDisponibilidad(articulo.id)}>✅</button>
@@ -532,42 +541,94 @@ function ArticuloManufacturado() {
       </div>
 
       {mostrarModalAgregarArticulo && (
-        <div className="modal">
-          <div className="modal-content">
-            <h3>Agregar Artículo</h3>
-            <input
-              type="text"
-              placeholder="Denominación"
-              value={nuevoArticulodenominacion}
-              onChange={(e) => setNuevoArticulodenominacion(e.target.value)}
-            />
-            <textarea
-              placeholder="Preparación"
-              value={nuevoArticulopreparacion}
-              onChange={(e) => setNuevoArticulopreparacion(e.target.value)}
-            ></textarea>
-            <textarea
-              placeholder="Descripcion"
-              value={nuevoArticulodescripcion}
-              onChange={(e) => setNuevoArticulodescripcion(e.target.value)}
-            ></textarea>
-            <input
-              type="number"
-              placeholder="Precio Venta"
-              value={nuevoArticuloprecioVenta}
-              onChange={(e) => setNuevoArticuloprecioVenta(Number(e.target.value))}
-            />
-            <input
-              type="number"
-              placeholder="Tiempo estimado en minutos"
-              value={nuevoArticulotiempoEstimadoMinutos}
-              onChange={(e) => setArticulotiempoEstimadoMinutos(Number(e.target.value))}
-            />
-            <button className="btn-agregar" onClick={handleAgregarArticulo}>Agregar</button>
-            <button className="btn-cancelar" onClick={() => setMostrarModalAgregarArticulo(false)}>Cancelar</button>
-          </div>
-        </div>
-      )}
+  <div className="modal">
+    <div className="modal-content">
+      <h3>Agregar Artículo</h3>
+      <p>Denominación</p>
+      <input
+        type="text"
+        value={nuevoArticulodenominacion}
+        onChange={(e) => setNuevoArticulodenominacion(e.target.value)}
+      />
+      <p>Preparación</p>
+      <textarea
+        value={nuevoArticulopreparacion}
+        onChange={(e) => setNuevoArticulopreparacion(e.target.value)}
+      ></textarea>
+      <p>Descripción</p>
+      <textarea
+        value={nuevoArticulodescripcion}
+        onChange={(e) => setNuevoArticulodescripcion(e.target.value)}
+      ></textarea>
+      <p>Precio Venta</p>
+      <input
+        type="number"
+        value={nuevoArticuloprecioVenta}
+        onChange={(e) => setNuevoArticuloprecioVenta(Number(e.target.value))}
+      />
+      <p>Tiempo estimado</p>
+      <input
+        type="number"
+        placeholder="Tiempo estimado en minutos"
+        value={nuevoArticulotiempoEstimadoMinutos}
+        onChange={(e) => nuevoArticulotiempoEstimadoMinutos(Number(e.target.value))}
+      />
+      <button onClick={() => setMostrarModalAgregarArticulo(false)}>Cancelar</button>
+      {' '}
+      <button onClick={handleAgregarArticulo}>Agregar</button>
+    </div>
+  </div>
+)}
+
+{mostrarModalAgregarArticulo && (
+  <div className="modal">
+    <div className="modal-content">
+      <h3>Agregar Artículo</h3>
+      <p>Denominación</p>
+      <input
+        type="text"
+        value={nuevoArticulodenominacion}
+        onChange={(e) => setNuevoArticulodenominacion(e.target.value)}
+      />
+      <p>Preparación</p>
+      <textarea
+        value={nuevoArticulopreparacion}
+        onChange={(e) => setNuevoArticulopreparacion(e.target.value)}
+      ></textarea>
+      <p>Descripción</p>
+      <textarea
+        value={nuevoArticulodescripcion}
+        onChange={(e) => setNuevoArticulodescripcion(e.target.value)}
+      ></textarea>
+      <p>Precio Venta</p>
+      <input
+        type="number"
+        value={nuevoArticuloprecioVenta}
+        onChange={(e) => setNuevoArticuloprecioVenta(Number(e.target.value))}
+      />
+      <p>Tiempo estimado</p>
+      <input
+        type="number"
+        placeholder="Tiempo estimado en minutos"
+        value={nuevoArticulotiempoEstimadoMinutos}
+        onChange={(e) => nuevoArticulotiempoEstimadoMinutos(Number(e.target.value))}
+      />
+      <button onClick={() => setMostrarModalAgregarArticulo(false)}>Cancelar</button>
+      {' '}
+      <button onClick={handleAgregarArticulo}>Agregar</button>
+      {' '}
+      <button onClick={() => setMostrarModalAgregarInsumo(true)}>Agregar Insumo</button>
+    </div>
+  </div>
+)}
+
+{mostrarModalAgregarInsumo && (
+  <div className="modal">
+    <div className="modal-content">
+      <button className="insumos" onClick={() => handleAbrirModalAgregarInsumo(articulo.id)}>Insumos</button>
+    </div>
+  </div>
+)}
 
       {mostrarModalModificarArticulo && (
         <div className="modal">
@@ -611,7 +672,6 @@ function ArticuloManufacturado() {
   <div className="modal">
     <div className="modal-content">
       <h3>Lista de Insumos</h3>
-      <button onClick={handleAbrirModalAgregarInsumo}>Agregar Insumo</button>
       <table className='table-container2'>
         <thead>
           <tr>
@@ -626,14 +686,14 @@ function ArticuloManufacturado() {
         </thead>
         <tbody>
           {insumos.map(({ insumo, cantidad }) => (
-            <tr key={insumo.id}>
-              <td>{insumo.id}</td>
-              <td>{insumo.denominacion}</td>
-              <td>${insumo.precioCompra}</td>
-              <td>${insumo.precioVenta}</td>
-              <td>{cantidad} {insumo.unidadMedida.denominacion}</td>
-              <td>{insumo.stockMaximo}</td>
-              <td>{insumo.esParaElaborar ? 'Sí' : 'No'}</td> {/* Mostrar "Sí" o "No" en lugar de true/false */}
+            <tr key={insumo?.id}>
+              <td>{insumo?.id}</td>
+              <td>{insumo?.denominacion}</td>
+              <td>${insumo?.precioCompra}</td>
+              <td>${insumo?.precioVenta}</td>
+              <td>{cantidad} {insumo?.unidadMedida.denominacion}</td>
+              <td>{insumo?.stockMaximo}</td>
+              <td>{insumo?.esParaElaborar ? 'Sí' : 'No'}</td> {/* Mostrar "Sí" o "No" en lugar de true/false */}
             </tr>
           ))}
         </tbody>
@@ -714,14 +774,27 @@ function ArticuloManufacturado() {
                 onChange={(e) => setNuevoInsumo({ ...nuevoInsumo, stockMaximo: parseInt(e.target.value) })}
               />
             </label>
+            <label>
+              Precio Venta:
+              <input
+                type="number"
+                value={nuevoInsumo.precioVenta}
+                onChange={(e) => setNuevoInsumo({ ...nuevoInsumo, precioVenta: parseFloat(e.target.value) })}
+              />
+            </label>
           </div>
         )}
-        <button type="submit">Guardar</button>
-        <button type="button" onClick={() => {
+        <button className="insumos" type="button" onClick={() => {
           // Cerrar el modal y ocultar el formulario
           setMostrarModalAgregarInsumo(false);
           setMostrarFormularioNuevoInsumo(false);
         }}>Cerrar</button>
+        {' '}
+        <button type="submit" onClick={() =>{
+          //window.location.reload();
+        }
+        }>Guardar</button>
+        
       </form>
     </div>
   </div>
